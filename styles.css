@@ -1,0 +1,132 @@
+body {
+    background-color: #ffc896;
+    font-family: 'Noto Sans TC', sans-serif;
+}
+
+.page {
+    width: 100vw;
+    height: 100vh;
+    padding: 1rem
+}
+
+.left {
+    width: 35%;
+    height: 100%;
+}
+
+.taiwan {
+    width: 100%;
+    height: 100%;
+    border-radius: 1rem;
+    background-color: #fff4ea;
+}
+
+.right {
+    width: 65%;
+    height: 100%;
+    margin-left: 1rem;
+}
+
+.function-section {
+    width: 100%;
+    height: 35%;
+}
+
+.choice {
+    width: 30%;
+    height: 100%;
+    border-radius: 1rem;
+    background-color: #fff4ea;
+}
+
+.form-check-label {
+    font-size: 1.2rem;
+    margin-left: 0.8rem;
+    font-weight: 500;
+}
+
+.form-check-label:hover {
+    cursor: pointer;
+}
+
+.form-check-input {
+    width: 1.5rem;
+	height: 1.5rem;
+	padding: 0;
+	margin: 0;
+    border: 1.5px solid black;
+}
+
+.form-check-input:hover {
+    background: #e8e8e8;
+    cursor: pointer;
+}
+
+.form-check-input:checked[type=radio] {
+    background: #ff914d url('./assets/check-lg.svg') no-repeat center;
+    border: 1.5px solid black;
+}
+
+.for-adjust {
+    width: 70%;
+    height: 100%;
+    border-radius: 1rem;
+    margin-left: 1rem;
+}
+
+.smoking-graph {
+    width: 60%;
+    height: 100%;
+    border-radius: 1rem;
+    background-color: #fff4ea;
+}
+
+.slider {
+    width: 40%;
+    height: 100%;
+    border-radius: 1rem;
+    background-color: #fff4ea;
+    margin-left: 1rem;
+}
+
+.cancer-graph {
+    width: 100%;
+    height: 32.5%;
+    margin-top: 1rem;
+}
+
+.cancer-bar-graph {
+    width: 30%;
+    height: 100%;
+    border-radius: 1rem;
+    background-color: #fff4ea;
+}
+
+.cancer-line-graph {
+    width: 70%;
+    height: 100%;
+    border-radius: 1rem;
+    background-color: #fff4ea;
+    margin-left: 1rem;
+}
+
+.aqi-graph {
+    width: 100%;
+    height: 32.5%;
+    margin-top: 1rem;
+}
+
+.aqi-bar-graph {
+    width: 30%;
+    height: 100%;
+    border-radius: 1rem;
+    background-color: #fff4ea;
+}
+
+.aqi-line-graph {
+    width: 70%;
+    height: 100%;
+    border-radius: 1rem;
+    background-color: #fff4ea;
+    margin-left: 1rem;
+}

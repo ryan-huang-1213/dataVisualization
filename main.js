@@ -1,57 +1,98 @@
-//main.js
-
+// main.js
+import { updateCancerBarGraph, updateCancerLineGraph } from "./cancer.js";
 import {
-  updateCancerBarGraph,
-  updateCancerLineGraph,
-  handleCancerMouseHover,
-  handleCancerMouseClick,
-} from "./cancer.js";
+  lastSelectedYear,
+  lastSelectedCounty,
+  setLastSelectedYear,
+  setLastSelectedCounty,
+} from "./sharedState.js";
 
-// 癌症發生率長條圖 確保取得正確的寬高，並提供預設值
-const cancerBarChartWidth =
-  document.querySelector("#cancer-bar-chart").clientWidth;
-const cancerBarChartHeight =
-  document.querySelector("#cancer-bar-chart").clientHeight;
-const cancerLineChartWidth =
-  document.querySelector("#cancer-line-chart").clientWidth;
-const cancerLineChartHeight =
-  document.querySelector("#cancer-line-chart").clientHeight;
-const year = 1979;
+function getChartDimensions(selector) {
+  const chart = document.querySelector(selector);
+  return { width: chart.clientWidth, height: chart.clientHeight };
+}
 
-// 癌症發生率長條圖 更新長條圖
-updateCancerBarGraph(year, cancerBarChartWidth, cancerBarChartHeight);
-
-// 癌症發生率長條圖和折線圖 添加滑鼠點擊事件
-const barChart = d3.select("#cancer-bar-chart");
-const lineChart = d3.select("#cancer-line-chart");
+function isMouseInsideChart(mouseX, mouseY, chartSelector) {
+  const chartRect = d3.select(chartSelector).node()?.getBoundingClientRect();
+  return (
+    chartRect &&
+    mouseX >= chartRect.left &&
+    mouseX <= chartRect.right &&
+    mouseY >= chartRect.top &&
+    mouseY <= chartRect.bottom
+  );
+}
 
 function handleCancerChartClick(event) {
   const [mouseX, mouseY] = d3.pointer(event);
-  const { year: selectedYear, county: selectedCounty } = handleCancerMouseClick(
-    mouseX,
-    mouseY
-  );
+  const barChartSelector = "#cancer-bar-chart svg";
+  const lineChartSelector = "#cancer-line-chart svg";
 
-  if (selectedYear !== null) {
-    console.log(`選取年份: ${selectedYear}`);
+  if (isMouseInsideChart(mouseX, mouseY, barChartSelector)) {
+    d3.select(barChartSelector)
+      .selectAll("rect")
+      .each(function (d, i, nodes) {
+        const rect = d3.select(nodes[i]);
+        let county = rect.attr("data-county");
+        const x = parseFloat(rect.attr("x"));
+        const y = parseFloat(rect.attr("y"));
+        const width = parseFloat(rect.attr("width"));
+        const height = parseFloat(rect.attr("height"));
+
+        if (
+          mouseX >= x &&
+          mouseX <= x + width &&
+          mouseY >= y &&
+          mouseY <= y + height
+        ) {
+          setLastSelectedCounty(county); // 使用 setter
+        }
+      });
   }
 
-  if (selectedCounty && selectedCounty !== "全國") {
-    updateCancerLineGraph(
-      selectedCounty,
-      cancerLineChartWidth,
-      cancerLineChartHeight
-    );
-    console.log(`已選擇縣市: ${selectedCounty}`);
+  if (isMouseInsideChart(mouseX, mouseY, lineChartSelector)) {
+    d3.select(lineChartSelector)
+      .selectAll("circle")
+      .each(function (d, i, nodes) {
+        const circle = d3.select(nodes[i]);
+        let year = parseInt(circle.attr("data-year"));
+        const cx = parseFloat(circle.attr("cx"));
+        const cy = parseFloat(circle.attr("cy"));
+        const r = parseFloat(circle.attr("r"));
+
+        if (
+          mouseX >= cx - r &&
+          mouseX <= cx + r &&
+          mouseY >= cy - r &&
+          mouseY <= cy + r
+        ) {
+          setLastSelectedYear(new Date().getFullYear()); // 使用 setter
+        }
+      });
   }
+
+  updateCharts();
 }
 
-// 添加滑鼠點擊事件到兩個圖表
-barChart.on("click", handleCancerChartClick);
-lineChart.on("click", handleCancerChartClick);
+function updateCharts() {
+  const barChartSize = getChartDimensions("#cancer-bar-chart");
+  const lineChartSize = getChartDimensions("#cancer-line-chart");
 
-// 癌症發生率長條圖 添加滑鼠移動事件
-barChart.on("mousemove", (event) => {
-  const [mouseX, mouseY] = d3.pointer(event);
-  handleCancerMouseHover(mouseX, mouseY);
+  updateCancerBarGraph(
+    lastSelectedYear,
+    barChartSize.width,
+    barChartSize.height
+  );
+  updateCancerLineGraph(
+    lastSelectedCounty,
+    lineChartSize.width,
+    lineChartSize.height
+  );
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  updateCharts();
+
+  d3.select("#cancer-bar-chart").on("click", handleCancerChartClick);
+  d3.select("#cancer-line-chart").on("click", handleCancerChartClick);
 });

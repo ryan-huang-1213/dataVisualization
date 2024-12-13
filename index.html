@@ -9,11 +9,22 @@
     <script src="https://d3js.org/d3.v6.min.js"></script>
     <script src="cancer.js" type="module"></script>
     <script src="main.js" type="module"></script>
+    <script src="taiwan.js" type="module"></script>
 </head>
 <body>
 	<div class="page d-flex flex-row">
         <div class="left">
-            <div class="taiwan">台灣地圖範例區域</div>
+            <div class="taiwan">
+                <div id="info">
+                    <h1 id="county-name">請選擇一個縣市</h1>
+                    <h2 id="county-eng"></h2>
+                </div>
+                <div class="taiwan-map" id="taiwan-map">
+            
+            </div>
+            
+              
+        </div>
         </div>
         <div class="right d-flex flex-column">
             <div class="function-section d-flex flex-row">

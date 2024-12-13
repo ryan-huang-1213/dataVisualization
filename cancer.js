@@ -108,17 +108,6 @@ function drawCancerBarGraph(data, width, height) {
     .attr("transform", `translate(${padding}, 0)`)
     .call(d3.axisLeft(y));
 
-  const tooltip = d3
-    .select("body")
-    .append("div")
-    .attr("id", "tooltip")
-    .attr("class", "tooltip")
-    .style("position", "absolute")
-    .style("background", "white")
-    .style("border", "1px solid black")
-    .style("padding", "5px")
-    .style("display", "none");
-
   sortedData.forEach(([county, { total, male, female }]) => {
     const barWidth = x.bandwidth() / 3;
     const maxBarHeight = Math.min(y(total), y(male), y(female));
@@ -146,18 +135,6 @@ function drawCancerBarGraph(data, width, height) {
         .attr("height", height - padding - y(value))
         .attr("fill", color)
         .attr("data-county", county)
-        .on("mouseover", (event) => {
-          tooltip
-            .style("left", `${event.pageX + 10}px`)
-            .style("top", `${event.pageY - 10}px`)
-            .style("display", "block")
-            .html(
-              `<strong>縣市: ${county}</strong><br>${label}: ${value.toFixed(
-                2
-              )}`
-            );
-        })
-        .on("mouseout", () => tooltip.style("display", "none"))
         .on("click", () => {
           setLastSelectedCounty(county); // 使用 setter
           updateCancerBarGraph(lastSelectedYear, width, height);
@@ -245,6 +222,17 @@ export function updateCancerLineGraph(county, width, height) {
         .attr("transform", `translate(40, 0)`)
         .call(d3.axisLeft(y));
 
+      const tooltip = d3
+        .select("body")
+        .append("div")
+        .attr("id", "tooltip")
+        .attr("class", "tooltip")
+        .style("position", "absolute")
+        .style("background", "white")
+        .style("border", "1px solid black")
+        .style("padding", "5px")
+        .style("display", "none");
+
       const lineGenerator = d3
         .line()
         .x((d) => x(d.year))
@@ -272,9 +260,20 @@ export function updateCancerLineGraph(county, width, height) {
           .attr("cy", (d) => y(d.incidence))
           .attr("r", 4)
           .attr("fill", color)
+          .on("mouseover", (event, d) => {
+            tooltip
+              .style("left", `${event.pageX + 10}px`)
+              .style("top", `${event.pageY - 10}px`)
+              .style("display", "block")
+              .html(
+                `<strong>年份: ${
+                  d.year
+                }</strong><br>發生率: ${d.incidence.toFixed(2)}`
+              );
+          })
+          .on("mouseout", () => tooltip.style("display", "none"))
           .on("click", (event, d) => {
-            console.log(`${d.year} ${new Date().getFullYear()}`);
-            setLastSelectedYear(d.year); // 使用 setter
+            setLastSelectedYear(d.year);
             updateCancerBarGraph(lastSelectedYear, width, height);
             updateCancerLineGraph(lastSelectedCounty, width, height);
           });

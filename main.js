@@ -17,14 +17,14 @@ const year = 1979;
 updateCancerBarGraph(year, cancerBarChartWidth, cancerBarChartHeight);
 
 // 癌症發生率長條圖 添加滑鼠移動事件
-const barChart = d3.select("#cancer-bar-chart");
-barChart.on("mousemove", (event) => {
+const cancerBarChart = d3.select("#cancer-bar-chart");
+cancerBarChart.on("mousemove", (event) => {
   const [mouseX, mouseY] = d3.pointer(event);
   handleCancerMouseHover(mouseX, mouseY);
 });
 
 // 癌症發生率長條圖 添加滑鼠點擊事件
-barChart.on("click", (event) => {
+cancerBarChart.on("click", (event) => {
   const [mouseX, mouseY] = d3.pointer(event);
   const selectedCounty = handleCancerMouseClick(mouseX, mouseY);
 

@@ -21,6 +21,12 @@ body {
     background-color: #fff4ea;
 }
 
+path.active {
+    fill: #ffcc00;
+    stroke: #000;
+    stroke-width: 2px;
+  }  
+
 .right {
     width: 65%;
     height: 100%;

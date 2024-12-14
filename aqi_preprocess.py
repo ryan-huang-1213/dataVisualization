@@ -2,7 +2,7 @@ import pandas as pd
 import re
 
 # 讀取檔案
-input_file = "./dataset/空氣品質監測站基本資料_preprocessed.csv"
+input_file = "./dataset/空氣品質監測站基本資料_processed.csv"
 aqi_file = "./dataset/AQI_merged_utf8.csv"
 output_file = "./dataset/AQI_merged_utf8_processed.csv"
 
@@ -53,6 +53,10 @@ pm10_data['日期'] = pm10_data['日期'].apply(format_date)
 # 保留指定欄位
 columns_to_keep = ['日期', '測站', '測項', 'county'] + [f'{i:02}' for i in range(1, 25)]
 pm10_data = pm10_data[columns_to_keep]
+
+# 判斷 01~24 欄位值是否包含 #, *, x, NR, 空白，並將其替換為 -1
+for col in [f'{i:02}' for i in range(1, 25)]:
+    pm10_data[col] = pm10_data[col].apply(lambda x: -1 if isinstance(x, str) and re.search(r'[#\*\sxNR\s]', x) else x)
 
 # 將處理後的資料輸出
 try:

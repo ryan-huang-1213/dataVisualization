@@ -1,58 +1,71 @@
-import * as d3 from "https://cdn.jsdelivr.net/npm/d3@6/+esm";
+// taiwan.js
 
-function drawTaiwanMap() {
-  // 取得 .taiwan 的寬度與高度
-  const container = document.querySelector(".taiwan");
-  const width = container.offsetWidth;
-  const height = container.offsetHeight;
+// 假設的分層設色資料，22 個縣市
+const countyData = {
+  基隆市: 100,
+  台北市: 150,
+  新北市: 200,
+  桃園市: 250,
+  新竹市: 180,
+  新竹縣: 220,
+  苗栗縣: 160,
+  台中市: 300,
+  彰化縣: 270,
+  南投縣: 190,
+  雲林縣: 210,
+  嘉義市: 170,
+  嘉義縣: 230,
+  台南市: 260,
+  高雄市: 310,
+  屏東縣: 240,
+  宜蘭縣: 140,
+  花蓮縣: 120,
+  台東縣: 130,
+  澎湖縣: 110,
+  金門縣: 105,
+  連江縣: 90,
+};
 
-  const projection = d3
-    .geoMercator()
-    .center([120.97, 23.5]) // 台灣中心點
-    .scale(8000) // 縮放比例（可調整以適配大小）
-    .translate([width / 2, height / 2]);
+// 設定顏色範圍與比例尺
+const colorScale = d3.scaleSequential(d3.interpolateYlOrRd).domain([90, 310]); // 最小和最大值
 
-  const path = d3.geoPath().projection(projection);
+// 繪製地圖上的各縣市
+function drawChoroplethMap(geoJsonData) {
+  const map = L.map("map_be06e6e0f04213affe7b2679b592aba8").setView(
+    [23.5, 121],
+    7
+  );
 
-  // 建立 SVG 並參考 .taiwan 的大小
-  const svg = d3
-    .select("#taiwan-map")
-    .append("svg")
-    .attr("width", width)
-    .attr("height", height)
-    .attr("viewBox", `0 0 ${width} ${height}`);
-
-  const url = "./dataset/COUNTY_MOI_1130718.json"; // GeoJSON 的路徑
-
-  d3.json(url).then((geometry) => {
-    if (!geometry.features || geometry.features.length === 0) {
-      console.error("GeoJSON 無有效 features");
-      return;
+  L.tileLayer(
+    "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png",
+    {
+      attribution: "&copy; OpenStreetMap contributors &copy; CARTO",
     }
+  ).addTo(map);
 
-    svg
-      .selectAll("path")
-      .data(geometry.features)
-      .enter()
-      .append("path")
-      .attr("d", path)
-      .attr("id", (d) => "city" + d.properties.COUNTYCODE)
-      .attr("fill", "#69b3a2")
-      .attr("stroke", "#fff")
-      .on("click", (event, d) => {
-        // 點擊更新中文與英文名稱
-        document.getElementById("county-name").textContent =
-          d.properties.COUNTYNAME;
-        document.getElementById("county-eng").textContent =
-          d.properties.COUNTYENG;
-
-        // 移除舊的 .active 樣式
-        d3.select(".active").classed("active", false);
-
-        // 為當前選中的 path 加上 .active 樣式
-        d3.select(event.target).classed("active", true);
-      });
-  });
+  // 加入 GeoJSON 圖層
+  L.geoJson(geoJsonData, {
+    style: (feature) => {
+      const countyName = feature.properties.COUNTYNAME;
+      const value = countyData[countyName] || 0;
+      return {
+        fillColor: colorScale(value),
+        weight: 1,
+        opacity: 1,
+        color: "black",
+        fillOpacity: 0.7,
+      };
+    },
+    onEachFeature: (feature, layer) => {
+      const countyName = feature.properties.COUNTYNAME;
+      const value = countyData[countyName] || "無資料";
+      layer.bindPopup(`${countyName}: ${value}`);
+    },
+  }).addTo(map);
 }
 
-document.addEventListener("DOMContentLoaded", drawTaiwanMap);
+// 載入地理資料並繪製地圖
+fetch("./dataset/taiwan.json")
+  .then((response) => response.json())
+  .then((data) => drawChoroplethMap(data))
+  .catch((error) => console.error("無法載入地圖資料:", error));

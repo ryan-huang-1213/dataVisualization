@@ -1,55 +1,62 @@
 import os
 import pandas as pd
+import chardet
 
-def find_ods_files(root_dir):
-    """遞歸搜索目錄，找到所有的 .ods 文件"""
-    ods_files = []
+def find_files_with_pattern(root_dir, pattern):
+    """遞歸搜索目錄，找到符合模式的檔案"""
+    matching_files = []
     for root, _, files in os.walk(root_dir):
         for file in files:
-            if file.endswith(".ods"):
-                full_path = os.path.join(root, file)
-                ods_files.append(full_path)
-                print(f"Found ODS file: {full_path}")  # 新增的列印訊息
-    return ods_files
+            if pattern in root and (file.endswith(".xls") or file.endswith(".csv")):
+                matching_files.append(os.path.join(root, file))
+    return matching_files
 
-def convert_ods_to_csv(ods_file, output_csv_file):
-    """將 .ods 文件轉換為 .csv 格式"""
+def detect_file_encoding(file_path):
+    """檢測文件編碼"""
+    with open(file_path, 'rb') as f:
+        raw_data = f.read()
+    result = chardet.detect(raw_data)
+    if result['encoding'] == 'GB2312': result['encoding'] = 'GB18030'
+    return result['encoding']
+
+def convert_xls_to_csv(xls_file):
+    """將 .xls 文件轉換為 .csv 格式，返回對應的 CSV 文件路徑"""
+    output_csv_file = xls_file.replace(".xls", ".csv")
     try:
-        # 使用 pandas 讀取 .ods 文件
-        df = pd.read_excel(ods_file, engine="odf")
-        # 移除第一列（假設是欄位名稱）
-        df = df.iloc[1:]
-        # 保存為 CSV 文件
+        df = pd.read_excel(xls_file)
         df.to_csv(output_csv_file, index=False, encoding="utf-8")
-        print(f"Converted: {ods_file} -> {output_csv_file}")
+        print(f"Converted: {xls_file} -> {output_csv_file}")
     except Exception as e:
-        print(f"Failed to convert {ods_file}: {e}")
+        print(f"Failed to convert {xls_file}: {e}")
+    return output_csv_file
 
-def process_all_ods_files(root_dir, output_file):
-    """處理所有 .ods 文件並合併為單一的 CSV 文件"""
-    ods_files = find_ods_files(root_dir)
+def process_and_merge_files(root_dir, output_file):
+    """處理所有 .xls 和 .csv 檔案並合併為單一 CSV 文件"""
+    # 遞歸找到所有符合條件的檔案
+    all_files = find_files_with_pattern(root_dir, "_HOUR_00")
     all_data = []
-    
-    if not ods_files:
-        print("No ODS files found in the specified directory.")
+
+    if not all_files:
+        print("No matching files found in the specified directory.")
         return
 
-    for ods_file in ods_files:
+    for file in all_files:
         try:
-            # 讀取 .ods 文件
-            df = pd.read_excel(ods_file, engine="odf")
-            print(f"Processing file: {ods_file}")  # 新增的列印訊息
-            # 移除第一列（假設是欄位名稱）
-            df = df.iloc[1:]
-            # 添加到總集合
+            if file.endswith(".xls"):
+                file = convert_xls_to_csv(file)  # 轉換為 CSV
+            # 檢測文件編碼
+            encoding = detect_file_encoding(file)
+            print(f"Detected encoding for {file}: {encoding}")
+            # 讀取 CSV 檔案
+            df = pd.read_csv(file, encoding=encoding)
+            print(f"Processing file: {file}")
             all_data.append(df)
         except Exception as e:
-            print(f"Error processing {ods_file}: {e}")
+            print(f"Error processing {file}: {e}")
 
     # 合併所有資料
     if all_data:
         merged_data = pd.concat(all_data, ignore_index=True)
-        # 儲存為 UTF-8 編碼的 CSV 文件
         merged_data.to_csv(output_file, index=False, encoding="utf-8")
         print(f"All files merged into: {output_file}")
     else:
@@ -60,5 +67,5 @@ if __name__ == "__main__":
     root_directory = "./dataset/AQI/"
     # 輸出的合併 CSV 文件
     output_csv = "./dataset/AQI_merged_utf8.csv"
-    
-    process_all_ods_files(root_directory, output_csv)
+
+    process_and_merge_files(root_directory, output_csv)

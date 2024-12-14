@@ -10,21 +10,15 @@
     <script src="cancer.js" type="module"></script>
     <script src="main.js" type="module"></script>
     <script src="taiwan.js" type="module"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
 </head>
 <body>
 	<div class="page d-flex flex-row">
         <div class="left">
             <div class="taiwan">
-                <div id="info">
-                    <h1 id="county-name">請選擇一個縣市</h1>
-                    <h2 id="county-eng"></h2>
-                </div>
-                <div class="taiwan-map" id="taiwan-map">
-            
+                <iframe src="./taiwan_map.html" style="width: 100%; height: 100%; padding: 10px;"></iframe>
             </div>
-            
-              
-        </div>
         </div>
         <div class="right d-flex flex-column">
             <div class="function-section d-flex flex-row">

@@ -103,6 +103,19 @@ function updateCharts() {
   );
 }
 
+document.querySelectorAll('input[name="map"]').forEach((input) => {
+  input.addEventListener("change", (event) => {
+    const value = event.target.value;
+    if (value === "1") {
+      console.log("顯示 AQI 資料");
+    } else if (value === "2") {
+      console.log("顯示 吸菸人數 資料");
+    } else if (value === "3") {
+      console.log("顯示 罹癌人數 資料");
+    }
+  });
+});
+
 document.addEventListener("DOMContentLoaded", () => {
   updateCharts();
 

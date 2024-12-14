@@ -1,5 +1,6 @@
 // main.js
 import { updateCancerBarGraph, updateCancerLineGraph } from "./cancer.js";
+import { updateAQIBarGraph, updateAQILineGraph } from "./aqi.js";
 import {
   lastSelectedYear,
   lastSelectedCounty,
@@ -77,6 +78,8 @@ function handleCancerChartClick(event) {
 function updateCharts() {
   const barChartSize = getChartDimensions("#cancer-bar-chart");
   const lineChartSize = getChartDimensions("#cancer-line-chart");
+  const aqiBarChartSize = getChartDimensions("#aqi-bar-chart");
+  const aqiLineChartSize = getChartDimensions("#aqi-line-chart");
 
   updateCancerBarGraph(
     lastSelectedYear,
@@ -87,6 +90,16 @@ function updateCharts() {
     lastSelectedCounty,
     lineChartSize.width,
     lineChartSize.height
+  );
+  updateAQIBarGraph(
+    lastSelectedYear,
+    aqiBarChartSize.width,
+    aqiBarChartSize.height
+  );
+  updateAQILineGraph(
+    lastSelectedCounty,
+    aqiLineChartSize.width,
+    aqiLineChartSize.height
   );
 }
 

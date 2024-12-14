@@ -7,7 +7,6 @@
 
 python -m http.server 8000
 
-
 # 備註
 我沒有建 venv 跟 requirement.txt 
 所以你可以考慮寫一下 .txt 的部分

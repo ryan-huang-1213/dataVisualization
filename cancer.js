@@ -332,6 +332,57 @@ function drawCancerLineGraph(groupedData, width, height, county) {
       .text((d) => `年份: ${d.year}\n發生率: ${d.incidence.toFixed(2)}`);
   });
 
+  // 可拖曳的垂直線
+  let currentX = x(lastSelectedYear); // 初始直線位置
+  const dragLine = svg
+    .append("line")
+    .attr("x1", currentX)
+    .attr("x2", currentX)
+    .attr("y1", padding)
+    .attr("y2", height - padding)
+    .attr("stroke", "orange")
+    .attr("stroke-width", 4) // 寬度加大，便於拖曳
+    .attr("stroke-dasharray", "4,4")
+    .style("cursor", "ew-resize");
+
+  const yearLabel = svg
+    .append("text")
+    .attr("x", currentX + 5)
+    .attr("y", padding - 10)
+    .attr("fill", "orange")
+    .style("font-size", "12px")
+    .style("font-weight", "bold")
+    .text(`Year: ${lastSelectedYear}`);
+
+  // 定義拖曳行為
+  const drag = d3
+    .drag()
+    .on("drag", (event) => {
+      // 限制拖曳範圍並計算最接近的年份
+      const mouseX = Math.max(padding, Math.min(width - padding, event.x));
+      const nearestYear = Math.round(x.invert(mouseX)); // 轉換座標並取最接近的年份
+      currentX = x(nearestYear); // 將年份映射回 X 軸的座標
+
+      // 更新直線和標籤
+      dragLine.attr("x1", currentX).attr("x2", currentX);
+      yearLabel.attr("x", currentX + 5).text(`Year: ${nearestYear}`);
+
+      // 更新 lastSelectedYear
+      setLastSelectedYear(nearestYear);
+    })
+    .on("end", () => {
+      // 拖曳結束時，更新其他圖表
+      updateCancerLineGraph(county, width, height);
+      const cancerBarChartSize = getChartDimensions("#cancer-bar-chart");
+      updateCancerBarGraph(
+        lastSelectedYear,
+        cancerBarChartSize.width,
+        cancerBarChartSize.height
+      );
+    });
+
+  dragLine.call(drag);
+
   // 添加標題
   svg
     .append("text")

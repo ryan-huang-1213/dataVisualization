@@ -4,6 +4,7 @@ import {
   lastSelectedCounty,
   setLastSelectedYear,
   setLastSelectedCounty,
+  displayCurrentSelection,
 } from "./sharedState.js";
 
 import { updateAQIBarGraph, updateAQILineGraph } from "./aqi.js";
@@ -32,7 +33,7 @@ export function updateCancerBarGraph(year, width, height) {
       const groupedData = aggregateCancerData(filteredData);
       drawCancerBarGraph(groupedData, width, height);
 
-      displayCurrentSelection();
+      // displayCurrentSelection();
     })
     .catch((error) => {
       console.error("載入 CSV 檔案失敗：", error);
@@ -177,40 +178,9 @@ function drawCancerBarGraph(data, width, height) {
           // 隱藏 tooltip 並重新繪製圖表
           tooltip.style("display", "none");
           setLastSelectedCounty(county);
-          updateCancerBarGraph(lastSelectedYear, width, height);
-          const cancerlinechartsize = getChartDimensions("#cancer-line-chart");
-          updateCancerLineGraph(
-            lastSelectedCounty,
-            cancerlinechartsize.width,
-            cancerlinechartsize.height
-          );
-          const aqibargraph = getChartDimensions("#aqi-bar-chart");
-          updateAQIBarGraph(
-            lastSelectedYear,
-            aqibargraph.width,
-            aqibargraph.height
-          );
         });
     });
   });
-}
-
-function displayCurrentSelection() {
-  const selectionDiv = d3.select("#current-selection");
-  if (selectionDiv.empty()) {
-    d3.select("body")
-      .append("div")
-      .attr("id", "current-selection")
-      .style("position", "absolute")
-      .style("top", "10px")
-      .style("right", "10px")
-      .style("background-color", "#f0f0f0")
-      .style("padding", "10px")
-      .style("border", "1px solid #ccc");
-  }
-  d3.select("#current-selection").html(
-    `目前選擇: 縣市 - ${lastSelectedCounty}，年份 - ${lastSelectedYear}`
-  );
 }
 
 // 更新癌症折線圖
@@ -370,16 +340,7 @@ function drawCancerLineGraph(groupedData, width, height, county) {
       // 更新 lastSelectedYear
       setLastSelectedYear(nearestYear);
     })
-    .on("end", () => {
-      // 拖曳結束時，更新其他圖表
-      updateCancerLineGraph(county, width, height);
-      const cancerBarChartSize = getChartDimensions("#cancer-bar-chart");
-      updateCancerBarGraph(
-        lastSelectedYear,
-        cancerBarChartSize.width,
-        cancerBarChartSize.height
-      );
-    });
+    .on("end", () => {});
 
   dragLine.call(drag);
 

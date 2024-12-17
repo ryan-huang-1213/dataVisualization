@@ -1,71 +1,174 @@
 // taiwan.js
+import { lastSelectedCounty, setLastSelectedCounty } from "./sharedState.js";
 
-// 假設的分層設色資料，22 個縣市
-const countyData = {
-  基隆市: 100,
-  台北市: 150,
-  新北市: 200,
-  桃園市: 250,
-  新竹市: 180,
-  新竹縣: 220,
-  苗栗縣: 160,
-  台中市: 300,
-  彰化縣: 270,
-  南投縣: 190,
-  雲林縣: 210,
-  嘉義市: 170,
-  嘉義縣: 230,
-  台南市: 260,
-  高雄市: 310,
-  屏東縣: 240,
-  宜蘭縣: 140,
-  花蓮縣: 120,
-  台東縣: 130,
-  澎湖縣: 110,
-  金門縣: 105,
-  連江縣: 90,
-};
+let taiwanData = null; // 用於儲存 taiwan.json 資料
 
-// 設定顏色範圍與比例尺
-const colorScale = d3.scaleSequential(d3.interpolateYlOrRd).domain([90, 310]); // 最小和最大值
-
-// 繪製地圖上的各縣市
-function drawChoroplethMap(geoJsonData) {
-  const map = L.map("map_be06e6e0f04213affe7b2679b592aba8").setView(
-    [23.5, 121],
-    7
-  );
-
-  L.tileLayer(
-    "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png",
-    {
-      attribution: "&copy; OpenStreetMap contributors &copy; CARTO",
-    }
-  ).addTo(map);
-
-  // 加入 GeoJSON 圖層
-  L.geoJson(geoJsonData, {
-    style: (feature) => {
-      const countyName = feature.properties.COUNTYNAME;
-      const value = countyData[countyName] || 0;
-      return {
-        fillColor: colorScale(value),
-        weight: 1,
-        opacity: 1,
-        color: "black",
-        fillOpacity: 0.7,
-      };
-    },
-    onEachFeature: (feature, layer) => {
-      const countyName = feature.properties.COUNTYNAME;
-      const value = countyData[countyName] || "無資料";
-      layer.bindPopup(`${countyName}: ${value}`);
-    },
-  }).addTo(map);
+// 繪製地圖函數
+export function drawTaiwan(county, year, width, height) {
+  if (!taiwanData) {
+    d3.json("./dataset/taiwan.json")
+      .then((data) => {
+        taiwanData = data; // 儲存資料供後續使用
+        console.log("Taiwan data loaded:", taiwanData);
+        renderMap(county, year, width, height);
+      })
+      .catch((error) => {
+        console.error("Failed to load taiwan.json:", error);
+      });
+  } else {
+    renderMap(county, year, width, height);
+  }
 }
 
-// 載入地理資料並繪製地圖
-fetch("./dataset/taiwan.json")
-  .then((response) => response.json())
-  .then((data) => drawChoroplethMap(data))
-  .catch((error) => console.error("無法載入地圖資料:", error));
+function renderMap(county, year, width, height) {
+  // 地圖投影與路徑產生器
+  var projection = d3.geoMercator().fitExtent(
+    [
+      [0, 0],
+      [width, height],
+    ],
+    taiwanData
+  );
+
+  var geoGenerator = d3.geoPath().projection(projection);
+
+  // 清空舊地圖
+  var svg = d3
+    .select("#map")
+    .attr("width", width)
+    .attr("height", height)
+    .selectAll("*")
+    .remove();
+
+  svg = d3.select("#map");
+
+  // 設置 Tooltip
+  var tooltip = d3
+    .select("#taiwan")
+    .append("div")
+    .attr("class", "tooltip")
+    .style("position", "absolute")
+    .style("background", "#fff")
+    .style("border", "1px solid #ddd")
+    .style("padding", "5px")
+    .style("border-radius", "5px")
+    .style("display", "none")
+    .style("pointer-events", "none");
+
+  // 添加圖層
+  const layers = svg.append("g").attr("class", "layers");
+  const layer1 = layers.append("g").attr("class", "layer1");
+  const layer2 = layers.append("g").attr("class", "layer2");
+
+  var activePath = null;
+
+  // 繪製地圖
+  layer1
+    .selectAll("path")
+    .data(taiwanData.features) // 使用預先載入的資料
+    .enter()
+    .append("path")
+    .attr("stroke", "white")
+    .attr("fill", "steelblue")
+    .attr("d", geoGenerator)
+    .on("mouseover", function (event, d) {
+      const name = d.properties?.NAME_2014 || "未知地區";
+      tooltip.style("display", "block").html(`${name} (${year} 年)`);
+    })
+    .on("mousemove", function (event) {
+      tooltip
+        .style("left", event.pageX + 10 + "px")
+        .style("top", event.pageY + 10 + "px");
+    })
+    .on("mouseout", () => tooltip.style("display", "none"))
+    .on("click", function (event, d) {
+      if (activePath && activePath.node() === this) {
+        activePath.attr("stroke", "white").attr("stroke-width", 1);
+        svg.select("rect.selection-box").remove(); // 移除舊框
+        activePath = null;
+        return;
+      }
+
+      if (activePath) {
+        activePath.attr("stroke", "white").attr("stroke-width", 1);
+        svg.select("rect.selection-box").remove();
+      }
+
+      activePath = d3.select(this);
+      setLastSelectedCounty(d.properties.NAME_2014);
+
+      const bounds = geoGenerator.bounds(d);
+      const x0 = bounds[0][0],
+        y0 = bounds[0][1];
+      const x1 = bounds[1][0],
+        y1 = bounds[1][1];
+
+      svg
+        .append("rect")
+        .attr("class", "selection-box")
+        .attr("x", x0)
+        .attr("y", y0)
+        .attr("width", x1 - x0)
+        .attr("height", y1 - y0)
+        .attr("fill", "none")
+        .attr("stroke", "black")
+        .attr("stroke-width", 1.5)
+        .attr("vector-effect", "non-scaling-stroke");
+    });
+
+  var customData = [
+    { name: "站點A", coord: [121.5654, 25.033], value: 300 },
+    { name: "站點B", coord: [120.6736, 24.1478], value: 150 },
+    { name: "站點C", coord: [120.3014, 23.147], value: 220 },
+  ];
+
+  layer2
+    .selectAll("circle")
+    .data(customData)
+    .enter()
+    .append("circle")
+    .attr("cx", (d) => projection(d.coord)[0])
+    .attr("cy", (d) => projection(d.coord)[1])
+    .attr("r", 5)
+    .attr("fill", (d) => d3.interpolateReds(d.value / 300))
+    .append("title")
+    .text((d) => `${d.name}: ${d.value}`);
+
+  var checkboxContainer = svg
+    .append("foreignObject")
+    .attr("x", width - 130)
+    .attr("y", 10)
+    .attr("width", 120)
+    .attr("height", 80)
+    .append("xhtml:div")
+    .attr("class", "checkbox-container")
+    .style("background", "#fff")
+    .style("padding", "10px")
+    .style("border", "1px solid #ccc")
+    .style("font-size", "12px")
+    .style("box-shadow", "0 2px 5px rgba(0,0,0,0.3)");
+
+  checkboxContainer
+    .append("label")
+    .text("Layer 1")
+    .append("input")
+    .attr("type", "checkbox")
+    .attr("checked", true)
+    .on("change", function () {
+      layer1.style("display", this.checked ? "block" : "none");
+    });
+
+  checkboxContainer.append("br");
+
+  checkboxContainer
+    .append("label")
+    .text("Layer 2")
+    .append("input")
+    .attr("type", "checkbox")
+    .attr("checked", true)
+    .on("change", function () {
+      layer2.style("display", this.checked ? "block" : "none");
+    });
+
+  console.log(`Taiwan map updated for ${county} (${year})`);
+}

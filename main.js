@@ -1,6 +1,7 @@
 // main.js
 import { updateCancerBarGraph, updateCancerLineGraph } from "./cancer.js";
 import { updateAQIBarGraph, updateAQILineGraph } from "./aqi.js";
+import { drawTaiwan } from "./taiwan.js";
 import {
   lastSelectedYear,
   lastSelectedCounty,
@@ -75,11 +76,12 @@ function handleCancerChartClick(event) {
   updateCharts();
 }
 
-function updateCharts() {
+export function updateCharts() {
   const cancerBarChartSize = getChartDimensions("#cancer-bar-chart");
   const cancerLineChartSize = getChartDimensions("#cancer-line-chart");
   const aqiBarChartSize = getChartDimensions("#aqi-bar-chart");
   const aqiLineChartSize = getChartDimensions("#aqi-line-chart");
+  const mapSize = getChartDimensions("#taiwan");
 
   updateCancerBarGraph(
     lastSelectedYear,
@@ -100,6 +102,12 @@ function updateCharts() {
     lastSelectedCounty,
     aqiLineChartSize.width,
     aqiLineChartSize.height
+  );
+  drawTaiwan(
+    lastSelectedCounty,
+    lastSelectedYear,
+    mapSize.width,
+    mapSize.height
   );
 }
 

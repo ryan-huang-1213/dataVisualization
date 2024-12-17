@@ -7,7 +7,7 @@ import {
 
 import { getChartDimensions } from "./main.js";
 
-const csvPath = "./dataset/aqi_merged_utf8_cleaned.csv";
+const csvPath = "./dataset/AQI_merged_utf8_cleaned.csv";
 
 // 更新 AQI 長條圖
 export function updateAQIBarGraph(year, width, height) {
@@ -50,16 +50,28 @@ function aggregateAQIData(data) {
         parseFloat(d[(i + 1).toString().padStart(2, "0")] || "0")
       ),
     ];
-    const maxAQI = Math.max(...values.filter((v) => !isNaN(v)));
+
+    // 過濾出有效的 AQI 數值
+    const validValues = values.filter((v) => !isNaN(v) && v > 0);
+    const sum = validValues.reduce((acc, v) => acc + v, 0); // 加總有效值
+    const avg = validValues.length > 0 ? sum / validValues.length : 0; // 計算平均值
 
     if (!result[county]) {
-      result[county] = 0;
+      result[county] = { sum: 0, count: 0 };
     }
 
-    result[county] = Math.max(result[county], maxAQI);
+    // 累加縣市的 AQI 值與數量
+    result[county].sum += sum;
+    result[county].count += validValues.length;
   });
 
-  return Object.entries(result).sort((a, b) => b[1] - a[1]);
+  // 計算最終平均值
+  const averageResult = Object.entries(result).map(([county, { sum, count }]) => {
+    return [county, count > 0 ? sum / count : 0];
+  });
+
+  // 按平均值降序排列
+  return averageResult.sort((a, b) => b[1] - a[1]);
 }
 
 function drawAQIBarGraph(data, width, height) {
@@ -99,44 +111,39 @@ function drawAQIBarGraph(data, width, height) {
     .attr("transform", `translate(${padding}, 0)`)
     .call(d3.axisLeft(y));
 
-  const tooltip = d3
-    .select("body")
-    .append("div")
-    .attr("id", "tooltip")
-    .attr("class", "tooltip")
-    .style("position", "absolute")
-    .style("background", "white")
-    .style("border", "1px solid black")
-    .style("padding", "5px")
-    .style("display", "none");
+  // 記錄當前選取的矩形
+  let selectedRect = null;
 
   data.forEach(([county, value]) => {
-    svg
+    const rect = svg
       .append("rect")
       .attr("x", x(county))
       .attr("y", y(value))
       .attr("width", x.bandwidth())
       .attr("height", height - padding - y(value))
       .attr("fill", "steelblue")
-      .attr("data-county", county)
-      .on("mouseover", (event) => {
-        tooltip
-          .style("left", `${event.pageX + 10}px`)
-          .style("top", `${event.pageY - 10}px`)
-          .style("display", "block")
-          .html(`<strong>縣市: ${county}</strong><br>AQI: ${value.toFixed(2)}`);
+      .style("cursor", "pointer") // 滑鼠游標變成 pointer
+      .on("mouseover", function () {
+        d3.select(this).attr("fill", "orange"); // 滑鼠懸停時變成橘色
       })
-      .on("mouseout", () => tooltip.style("display", "none"))
-      .on("click", () => {
-        setLastSelectedCounty(county); // 使用 setter
-        console.log(`aqi.js drawAQIBarGraph 已將 county 設為 ${county}`);
-        updateAQIBarGraph(lastSelectedYear, width, height);
-        const linechartsize = getChartDimensions("#aqi-line-chart");
-        updateAQILineGraph(
-          lastSelectedCounty,
-          linechartsize.width,
-          linechartsize.height
-        );
+      .on("mouseout", function () {
+        // 如果不是選取的矩形，恢復原色
+        if (this !== selectedRect) {
+          d3.select(this).attr("fill", "steelblue");
+        }
+      })
+      .on("click", function () {
+        // 恢復上一次選取的矩形顏色
+        if (selectedRect) {
+          d3.select(selectedRect).attr("fill", "steelblue");
+        }
+        // 設定新選取的矩形為橘色
+        d3.select(this).attr("fill", "orange");
+        selectedRect = this;
+
+        // 調用折線圖函式
+        const linechartSize = getChartDimensions("#aqi-line-chart");
+        updateAQILineGraph(county, linechartSize.width, linechartSize.height);
       });
   });
 }
@@ -240,7 +247,7 @@ function drawAQILineGraphByYear(data, width, height, county) {
     .nice()
     .range([height - padding, padding]);
 
-  const xAxis = d3.axisBottom(x).tickFormat(d3.format("d")).ticks(data.length); // 每年顯示一次
+  const xAxis = d3.axisBottom(x).tickFormat(d3.format("d")).ticks(10); // 每年顯示一次
   const yAxis = d3.axisLeft(y);
 
   // 添加 X 軸

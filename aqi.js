@@ -129,7 +129,7 @@ function drawAQIBarGraph(data, width, height) {
       .on("mouseout", () => tooltip.style("display", "none"))
       .on("click", () => {
         setLastSelectedCounty(county); // 使用 setter
-        console.log(`aqi.js drawAQIBarGraph 已將 county 設為 ${county}`);
+        // console.log(`aqi.js drawAQIBarGraph 已將 county 設為 ${county}`);
         updateAQIBarGraph(lastSelectedYear, width, height);
         const linechartsize = getChartDimensions("#aqi-line-chart");
         updateAQILineGraph(

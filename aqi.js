@@ -5,6 +5,8 @@ import {
   setLastSelectedCounty,
 } from "./sharedState.js";
 
+import { getChartDimensions } from "./main.js";
+
 const csvPath = "./dataset/aqi_merged_utf8_cleaned.csv";
 
 // 更新 AQI 長條圖
@@ -127,8 +129,14 @@ function drawAQIBarGraph(data, width, height) {
       .on("mouseout", () => tooltip.style("display", "none"))
       .on("click", () => {
         setLastSelectedCounty(county); // 使用 setter
+        console.log(`aqi.js drawAQIBarGraph 已將 county 設為 ${county}`);
         updateAQIBarGraph(lastSelectedYear, width, height);
-        updateAQILineGraph(lastSelectedCounty, width, height);
+        const linechartsize = getChartDimensions("#aqi-line-chart");
+        updateAQILineGraph(
+          lastSelectedCounty,
+          linechartsize.width,
+          linechartsize.height
+        );
       });
   });
 }
@@ -161,7 +169,7 @@ export function updateAQILineGraph(county, width, height) {
       });
 
       if (filteredData.length === 0) {
-        console.error("無符合條件的資料。");
+        console.error(`無符合條件的資料。縣市 : ${lastSelectedCounty}`);
         return;
       }
 

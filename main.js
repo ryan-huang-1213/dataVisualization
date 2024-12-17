@@ -8,7 +8,7 @@ import {
   setLastSelectedCounty,
 } from "./sharedState.js";
 
-function getChartDimensions(selector) {
+export function getChartDimensions(selector) {
   const chart = document.querySelector(selector);
   return { width: chart.clientWidth, height: chart.clientHeight };
 }
@@ -76,20 +76,20 @@ function handleCancerChartClick(event) {
 }
 
 function updateCharts() {
-  const barChartSize = getChartDimensions("#cancer-bar-chart");
-  const lineChartSize = getChartDimensions("#cancer-line-chart");
+  const cancerBarChartSize = getChartDimensions("#cancer-bar-chart");
+  const cancerLineChartSize = getChartDimensions("#cancer-line-chart");
   const aqiBarChartSize = getChartDimensions("#aqi-bar-chart");
   const aqiLineChartSize = getChartDimensions("#aqi-line-chart");
 
   updateCancerBarGraph(
     lastSelectedYear,
-    barChartSize.width,
-    barChartSize.height
+    cancerBarChartSize.width,
+    cancerBarChartSize.height
   );
   updateCancerLineGraph(
     lastSelectedCounty,
-    lineChartSize.width,
-    lineChartSize.height
+    cancerLineChartSize.width,
+    cancerLineChartSize.height
   );
   updateAQIBarGraph(
     lastSelectedYear,
@@ -103,22 +103,9 @@ function updateCharts() {
   );
 }
 
-document.querySelectorAll('input[name="map"]').forEach((input) => {
-  input.addEventListener("change", (event) => {
-    const value = event.target.value;
-    if (value === "1") {
-      console.log("顯示 AQI 資料");
-    } else if (value === "2") {
-      console.log("顯示 吸菸人數 資料");
-    } else if (value === "3") {
-      console.log("顯示 罹癌人數 資料");
-    }
-  });
-});
-
 document.addEventListener("DOMContentLoaded", () => {
   updateCharts();
 
-  d3.select("#cancer-bar-chart").on("click", handleCancerChartClick);
-  d3.select("#cancer-line-chart").on("click", handleCancerChartClick);
+  // d3.select("#cancer-bar-chart").on("click", handleCancerChartClick);
+  // d3.select("#cancer-line-chart").on("click", handleCancerChartClick);
 });

@@ -6,10 +6,16 @@ import {
   setLastSelectedCounty,
 } from "./sharedState.js";
 
+import { updateAQIBarGraph, updateAQILineGraph } from "./aqi.js";
+import { getChartDimensions } from "./main.js";
+
 const csvPath = "./dataset/癌症發生統計_utf8.csv";
 
 // 更新癌症長條圖
 export function updateCancerBarGraph(year, width, height) {
+  // 清除所有 tooltip
+  d3.selectAll("#tooltip").remove();
+
   d3.csv(csvPath)
     .then((data) => {
       const filteredData = data.filter(
@@ -62,6 +68,19 @@ function drawCancerBarGraph(data, width, height) {
   const padding = 40;
   d3.select("#cancer-bar-chart").selectAll("svg").remove();
 
+  // Tooltip 定義
+  const tooltip = d3
+    .select("body")
+    .append("div")
+    .attr("id", "tooltip")
+    .style("position", "absolute")
+    .style("background", "rgba(255, 255, 255, 0.9)")
+    .style("border", "1px solid #ddd")
+    .style("padding", "8px")
+    .style("display", "none")
+    .style("pointer-events", "none")
+    .style("box-shadow", "0 0 6px rgba(0, 0, 0, 0.2)");
+
   // 將全國移到最左邊，其他縣市依照數據排序
   const sortedData = [
     ...data.filter(([county]) => county === "全國"),
@@ -110,14 +129,14 @@ function drawCancerBarGraph(data, width, height) {
 
   sortedData.forEach(([county, { total, male, female }]) => {
     const barWidth = x.bandwidth() / 3;
-    const maxBarHeight = Math.min(y(total), y(male), y(female));
 
+    // 繪製紅色邊框
     svg
       .append("rect")
       .attr("x", x(county))
-      .attr("y", maxBarHeight)
+      .attr("y", y(Math.max(total, male, female)))
       .attr("width", x.bandwidth())
-      .attr("height", height - padding - maxBarHeight)
+      .attr("height", height - padding - y(Math.max(total, male, female)))
       .attr("fill", "none")
       .attr("stroke", county === lastSelectedCounty ? "red" : "none")
       .attr("stroke-width", 3);
@@ -135,10 +154,42 @@ function drawCancerBarGraph(data, width, height) {
         .attr("height", height - padding - y(value))
         .attr("fill", color)
         .attr("data-county", county)
+        .on("mouseover", (event) => {
+          tooltip
+            .style("display", "block")
+            .html(
+              `<strong>縣市:</strong> ${county}<br>` +
+                `<strong>類別:</strong> ${label}<br>` +
+                `<strong>發生率:</strong> ${value.toFixed(2)}`
+            )
+            .style("left", `${event.pageX + 10}px`)
+            .style("top", `${event.pageY - 20}px`);
+        })
+        .on("mousemove", (event) => {
+          tooltip
+            .style("left", `${event.pageX + 10}px`)
+            .style("top", `${event.pageY - 20}px`);
+        })
+        .on("mouseout", () => {
+          tooltip.style("display", "none");
+        })
         .on("click", () => {
-          setLastSelectedCounty(county); // 使用 setter
+          // 隱藏 tooltip 並重新繪製圖表
+          tooltip.style("display", "none");
+          setLastSelectedCounty(county);
           updateCancerBarGraph(lastSelectedYear, width, height);
-          updateCancerLineGraph(lastSelectedCounty, width, height);
+          const cancerlinechartsize = getChartDimensions("#cancer-line-chart");
+          updateCancerLineGraph(
+            lastSelectedCounty,
+            cancerlinechartsize.width,
+            cancerlinechartsize.height
+          );
+          const aqibargraph = getChartDimensions("#aqi-bar-chart");
+          updateAQIBarGraph(
+            lastSelectedYear,
+            aqibargraph.width,
+            aqibargraph.height
+          );
         });
     });
   });
@@ -166,6 +217,7 @@ function displayCurrentSelection() {
 export function updateCancerLineGraph(county, width, height) {
   d3.csv(csvPath)
     .then((data) => {
+      // 過濾符合條件的資料
       const filteredData = data.filter(
         (d) =>
           d["癌症別"]?.toString().trim()?.includes("肺、支氣管及氣管") &&
@@ -177,8 +229,8 @@ export function updateCancerLineGraph(county, width, height) {
         return;
       }
 
+      // 分組資料，依性別與總體數據整理
       const groupedData = { total: [], male: [], female: [] };
-
       filteredData.forEach((d) => {
         const year = parseInt(d["癌症診斷年"]);
         const incidence = parseFloat(
@@ -194,92 +246,99 @@ export function updateCancerLineGraph(county, width, height) {
         else groupedData.total.push({ year, incidence });
       });
 
-      const svg = d3.select("#cancer-line-chart").selectAll("svg").remove();
-
-      const svgCanvas = d3
-        .select("#cancer-line-chart")
-        .append("svg")
-        .attr("width", width)
-        .attr("height", height);
-
-      const x = d3
-        .scaleLinear()
-        .domain(d3.extent(groupedData.total, (d) => d.year))
-        .range([40, width - 40]);
-
-      const y = d3
-        .scaleLinear()
-        .domain([0, 70])
-        .range([height - 40, 40]);
-
-      svgCanvas
-        .append("g")
-        .attr("transform", `translate(0, ${height - 40})`)
-        .call(d3.axisBottom(x));
-
-      svgCanvas
-        .append("g")
-        .attr("transform", `translate(40, 0)`)
-        .call(d3.axisLeft(y));
-
-      const tooltip = d3
-        .select("body")
-        .append("div")
-        .attr("id", "tooltip")
-        .attr("class", "tooltip")
-        .style("position", "absolute")
-        .style("background", "white")
-        .style("border", "1px solid black")
-        .style("padding", "5px")
-        .style("display", "none");
-
-      const lineGenerator = d3
-        .line()
-        .x((d) => x(d.year))
-        .y((d) => y(d.incidence));
-
-      ["total", "male", "female"].forEach((key, index) => {
-        const color =
-          key === "total" ? "black" : key === "male" ? "blue" : "red";
-        const groupData = groupedData[key];
-
-        svgCanvas
-          .append("path")
-          .datum(groupData)
-          .attr("fill", "none")
-          .attr("stroke", color)
-          .attr("stroke-width", 2)
-          .attr("d", lineGenerator);
-
-        svgCanvas
-          .selectAll(`.${key}-dots`)
-          .data(groupData)
-          .enter()
-          .append("circle")
-          .attr("cx", (d) => x(d.year))
-          .attr("cy", (d) => y(d.incidence))
-          .attr("r", 4)
-          .attr("fill", color)
-          .on("mouseover", (event, d) => {
-            tooltip
-              .style("left", `${event.pageX + 10}px`)
-              .style("top", `${event.pageY - 10}px`)
-              .style("display", "block")
-              .html(
-                `<strong>年份: ${
-                  d.year
-                }</strong><br>發生率: ${d.incidence.toFixed(2)}`
-              );
-          })
-          .on("mouseout", () => tooltip.style("display", "none"))
-          .on("click", (event, d) => {
-            setLastSelectedYear(d.year);
-            updateCancerBarGraph(lastSelectedYear, width, height);
-            updateCancerLineGraph(lastSelectedCounty, width, height);
-          });
-      });
+      // 呼叫繪製函數
+      drawCancerLineGraph(groupedData, width, height, county);
     })
     .catch((error) => {
       console.error("載入 CSV 檔案失敗：", error);
     });
+}
+
+function drawCancerLineGraph(groupedData, width, height, county) {
+  const padding = 50;
+
+  // 清除之前的圖表
+  d3.select("#cancer-line-chart").selectAll("svg").remove();
+
+  const svg = d3
+    .select("#cancer-line-chart")
+    .append("svg")
+    .attr("width", width)
+    .attr("height", height);
+
+  // 定義比例尺
+  const x = d3
+    .scaleLinear()
+    .domain([
+      d3.min(groupedData.total, (d) => d.year),
+      d3.max(groupedData.total, (d) => d.year),
+    ])
+    .range([padding, width - padding]);
+
+  const y = d3
+    .scaleLinear()
+    .domain([
+      0,
+      d3.max(
+        [...groupedData.total, ...groupedData.male, ...groupedData.female],
+        (d) => d.incidence
+      ),
+    ])
+    .nice()
+    .range([height - padding, padding]);
+
+  // 繪製 X 軸和 Y 軸
+  svg
+    .append("g")
+    .attr("transform", `translate(0, ${height - padding})`)
+    .call(d3.axisBottom(x).tickFormat(d3.format("d")));
+
+  svg
+    .append("g")
+    .attr("transform", `translate(${padding}, 0)`)
+    .call(d3.axisLeft(y));
+
+  // 定義折線
+  const lineGenerator = d3
+    .line()
+    .x((d) => x(d.year))
+    .y((d) => y(d.incidence))
+    .curve(d3.curveMonotoneX);
+
+  const colors = { total: "black", male: "blue", female: "red" };
+
+  // 繪製折線和數據點
+  ["total", "male", "female"].forEach((key) => {
+    const data = groupedData[key];
+
+    svg
+      .append("path")
+      .datum(data)
+      .attr("fill", "none")
+      .attr("stroke", colors[key])
+      .attr("stroke-width", 2)
+      .attr("d", lineGenerator);
+
+    svg
+      .selectAll(`.${key}-dots`)
+      .data(data)
+      .enter()
+      .append("circle")
+      .attr("cx", (d) => x(d.year))
+      .attr("cy", (d) => y(d.incidence))
+      .attr("r", 4)
+      .attr("fill", colors[key])
+      .append("title")
+      .text((d) => `年份: ${d.year}\n發生率: ${d.incidence.toFixed(2)}`);
+  });
+
+  // 添加標題
+  svg
+    .append("text")
+    .attr("x", width / 2)
+    .attr("y", padding / 2)
+    .attr("text-anchor", "middle")
+    .style("font-size", "16px")
+    .style("font-weight", "bold")
+    .text(`縣市: ${county} - 各年份癌症發生率折線圖`);
 }

@@ -13,20 +13,20 @@ export function setLastSelectedCounty(county) {
 }
 
 export function displayCurrentSelection() {
-  const selectionDiv = d3.select("#current-selection");
+  const selectionDiv = d3.select("#now-select");
+
   if (selectionDiv.empty()) {
-    d3.select("body")
+    d3.select("#now-select")
       .append("div")
       .attr("id", "current-selection")
-      .style("position", "absolute")
-      .style("top", "10px")
-      .style("right", "10px")
       .style("background-color", "#f0f0f0")
       .style("padding", "10px")
       .style("border", "1px solid #ccc");
   }
-  d3.select("#current-selection").html(
-    `目前選擇: 縣市 - ${lastSelectedCounty}，年份 - ${lastSelectedYear}`
+
+  selectionDiv.html(
+    `<br>當前選擇 : <br>縣市 : ${lastSelectedCounty}   年份 : ${lastSelectedYear}`
   );
+
   updateCharts();
 }

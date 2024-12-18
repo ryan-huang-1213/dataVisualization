@@ -12,7 +12,7 @@ const csvPath = "./dataset/AQI_merged_utf8_cleaned.csv";
 // 更新 AQI 長條圖
 export function updateAQIBarGraph(year, width, height) {
   d3.selectAll("#tooltip").remove();
-  
+
   d3.csv(csvPath)
     .then((data) => {
       // 檢查日期格式並修正
@@ -23,9 +23,7 @@ export function updateAQIBarGraph(year, width, height) {
       });
 
       // 過濾出選定年份的數據
-      const filteredData = data.filter(
-        (d) => d["日期"]?.startsWith(year)
-      );
+      const filteredData = data.filter((d) => d["日期"]?.startsWith(year));
 
       if (filteredData.length === 0) {
         console.error(`無符合條件的資料。年份: ${year}`);
@@ -67,16 +65,18 @@ function aggregateAQIData(data) {
   });
 
   // 計算最終平均值
-  const averageResult = Object.entries(result).map(([county, { sum, count }]) => {
-    return [county, count > 0 ? sum / count : 0];
-  });
+  const averageResult = Object.entries(result).map(
+    ([county, { sum, count }]) => {
+      return [county, count > 0 ? sum / count : 0];
+    }
+  );
 
   // 按平均值降序排列
   return averageResult.sort((a, b) => b[1] - a[1]);
 }
 
 function drawAQIBarGraph(data, width, height) {
-  const padding = { top: 20, left: 30, bottom: 40, right: 20 }
+  const padding = { top: 20, left: 30, bottom: 40, right: 20 };
   d3.select("#aqi-bar-chart").selectAll("svg").remove();
 
   const tooltip = d3
@@ -136,13 +136,13 @@ function drawAQIBarGraph(data, width, height) {
       .on("mouseover", function () {
         d3.select(this).attr("fill", "#DE9CEE");
         tooltip
-            .style("display", "block")
-            .html(
-              `<strong>縣市:</strong> ${county}<br>` +
-                `<strong>平均AQI:</strong> ${value.toFixed(2)}`
-            )
-            .style("left", `${event.pageX + 10}px`)
-            .style("top", `${event.pageY - 20}px`);
+          .style("display", "block")
+          .html(
+            `<strong>縣市:</strong> ${county}<br>` +
+              `<strong>平均AQI:</strong> ${value.toFixed(2)}`
+          )
+          .style("left", `${event.pageX + 10}px`)
+          .style("top", `${event.pageY - 20}px`);
       })
       .on("mouseout", function () {
         tooltip.style("display", "none");
@@ -167,9 +167,6 @@ function displayCurrentSelection() {
       .style("padding", "10px")
       .style("border", "1px solid #ccc");
   }
-  d3.select("#current-selection").html(
-    `目前選擇: 縣市 - ${lastSelectedCounty}，年份 - ${lastSelectedYear}`
-  );
 }
 
 // 更新 AQI 折線圖
@@ -213,7 +210,7 @@ export function updateAQILineGraph(county, width, height) {
 function groupAQIDataByYear(data) {
   const result = {};
   let yearMin = 10000;
-  
+
   data.forEach((d) => {
     const year = d["日期"].substring(0, 4); // 提取年份
     if (parseInt(year) < yearMin) {

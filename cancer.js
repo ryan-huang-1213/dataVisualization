@@ -23,7 +23,7 @@ export function updateCancerBarGraph(year, width, height) {
       );
 
       if (filteredData.length === 0) {
-        console.error("無符合條件的資料。");
+        console.error("無符合條件的資料。", year);
         return;
       }
 
@@ -64,7 +64,7 @@ function aggregateCancerData(data) {
 }
 
 function drawCancerBarGraph(data, width, height, selectedGender) {
-  const padding = { top: 20, left: 30, bottom: 40, right: 20 }
+  const padding = { top: 20, left: 30, bottom: 40, right: 20 };
   d3.select("#cancer-bar-chart").selectAll("svg").remove();
 
   // Tooltip 定義
@@ -127,7 +127,7 @@ function drawCancerBarGraph(data, width, height, selectedGender) {
     .call(d3.axisLeft(y));
 
   sortedData.forEach(([county, gender]) => {
-    const color = {'total': '#58D68D','male': '#87CEEB','female': '#FFC0CB'}
+    const color = { total: "#58D68D", male: "#87CEEB", female: "#FFC0CB" };
 
     // 繪製紅色邊框
     svg
@@ -135,7 +135,10 @@ function drawCancerBarGraph(data, width, height, selectedGender) {
       .attr("x", x(county))
       .attr("y", y(gender[selectedGender]))
       .attr("width", x.bandwidth())
-      .attr("height", height - padding.bottom - y(gender[selectedGender]))
+      .attr(
+        "height",
+        height - padding.bottom - y(Math.max(total, male, female))
+      )
       .attr("fill", "none")
       .attr("stroke", county === lastSelectedCounty ? "red" : "none")
       .attr("stroke-width", 3);
@@ -173,7 +176,7 @@ function drawCancerBarGraph(data, width, height, selectedGender) {
         setLastSelectedCounty(county);
       });
   });
-};
+}
 
 // 更新癌症折線圖
 export function updateCancerLineGraph(county, width, height) {
@@ -295,7 +298,11 @@ function drawCancerLineGraph(groupedData, width, height, county) {
   });
 
   // 可拖曳的垂直線
-  let currentX = x(lastSelectedYear); // 初始直線位置
+  const cancerValue = parseInt(
+    document.getElementById("cancer-slider").value,
+    10
+  );
+  let currentX = x(lastSelectedYear + cancerValue); // 初始直線位置
   const dragLine = svg
     .append("line")
     .attr("x1", currentX)
@@ -313,7 +320,7 @@ function drawCancerLineGraph(groupedData, width, height, county) {
     .attr("fill", "red")
     .style("font-size", "12px")
     .style("font-weight", "bold")
-    .text(`Year: ${lastSelectedYear}`);
+    .text(`Year: ${lastSelectedYear + cancerValue}`);
 
   // 定義拖曳行為
   var nearestYear = null;
@@ -331,7 +338,7 @@ function drawCancerLineGraph(groupedData, width, height, county) {
     })
     .on("end", () => {
       // 更新 lastSelectedYear
-      setLastSelectedYear(nearestYear);
+      setLastSelectedYear(nearestYear - cancerValue);
     });
 
   dragLine.call(drag);

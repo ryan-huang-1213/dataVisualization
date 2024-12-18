@@ -186,9 +186,15 @@ export function updateAQILineGraph(county, width, height) {
 
       // 分組並計算每年平均 AQI
       const yearlyData = groupAQIDataByYear(filteredData);
+      const aqiValue = parseInt(
+        document.getElementById("aqi-slider").value,
+        10
+      );
 
       if (yearlyData === null) {
-        console.error(`無符合條件的資料。年份 : ${lastSelectedYear}`);
+        console.error(
+          `無符合條件的資料。年份 : ${lastSelectedYear + aqiValue}`
+        );
         d3.select("#aqi-line-chart").selectAll("svg").remove();
         return;
       }
@@ -229,8 +235,9 @@ function groupAQIDataByYear(data) {
     result[year].sum += dailyAvg;
     result[year].count++;
   });
+  const aqiValue = parseInt(document.getElementById("aqi-slider").value, 10);
 
-  if (lastSelectedYear < yearMin) {
+  if (lastSelectedYear + aqiValue < yearMin) {
     return null;
   }
 
@@ -306,7 +313,8 @@ function drawAQILineGraphByYear(data, width, height, county) {
     .text((d) => `年份: ${d.year}\n平均 AQI: ${d.avg.toFixed(2)}`);
 
   // 可拖曳的垂直線
-  let currentX = x(lastSelectedYear); // 初始直線位置
+  const aqiValue = parseInt(document.getElementById("aqi-slider").value, 10);
+  let currentX = x(lastSelectedYear + aqiValue); // 初始直線位置
   const dragLine = svg
     .append("line")
     .attr("x1", currentX)
@@ -324,7 +332,7 @@ function drawAQILineGraphByYear(data, width, height, county) {
     .attr("fill", "red")
     .style("font-size", "12px")
     .style("font-weight", "bold")
-    .text(`Year: ${lastSelectedYear}`);
+    .text(`Year: ${lastSelectedYear + aqiValue}`);
 
   // 定義拖曳行為
   var nearestYear = null;
@@ -342,7 +350,7 @@ function drawAQILineGraphByYear(data, width, height, county) {
     })
     .on("end", () => {
       // 更新 lastSelectedYear
-      setLastSelectedYear(nearestYear);
+      setLastSelectedYear(nearestYear - aqiValue);
     });
 
   dragLine.call(drag);

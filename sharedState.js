@@ -25,7 +25,7 @@ export function displayCurrentSelection() {
   }
 
   selectionDiv.html(
-    `<br>當前選擇 : <br>縣市 : ${lastSelectedCounty}   年份 : ${lastSelectedYear}`
+    `縣市 : ${lastSelectedCounty}   年份 : ${lastSelectedYear}`
   );
 
   updateCharts();

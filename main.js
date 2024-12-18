@@ -26,8 +26,22 @@ export function updateCharts() {
   const smokeChartSize = getChartDimensions("#smoking-chart");
   const mapSize = getChartDimensions("#taiwan");
 
+  const smokeValue = parseInt(
+    document.getElementById("smoke-slider").value,
+    10
+  );
+  const aqiValue = parseInt(document.getElementById("aqi-slider").value, 10);
+  const cancerValue = parseInt(
+    document.getElementById("cancer-slider").value,
+    10
+  );
+
+  console.log("Smoke Value:", smokeValue);
+  console.log("AQI Value:", aqiValue);
+  console.log("Cancer Value:", cancerValue);
+
   updateCancerBarGraph(
-    lastSelectedYear,
+    lastSelectedYear + cancerValue,
     cancerBarChartSize.width,
     cancerBarChartSize.height
   );
@@ -37,7 +51,7 @@ export function updateCharts() {
     cancerLineChartSize.height
   );
   updateAQIBarGraph(
-    lastSelectedYear,
+    lastSelectedYear + aqiValue,
     aqiBarChartSize.width,
     aqiBarChartSize.height
   );
@@ -47,7 +61,7 @@ export function updateCharts() {
     aqiLineChartSize.height
   );
   updateSmokeChart(
-    lastSelectedYear,
+    lastSelectedYear + smokeValue,
     smokeChartSize.width,
     smokeChartSize.height
   );
@@ -60,8 +74,30 @@ export function updateCharts() {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
+  document
+    .getElementById("smoke-slider")
+    .addEventListener("input", updateCharts);
+  document.getElementById("aqi-slider").addEventListener("input", updateCharts);
+  document
+    .getElementById("cancer-slider")
+    .addEventListener("input", updateCharts);
+  displayCurrentSelection();
+});
+
+document.addEventListener("DOMContentLoaded", () => {
   // updateCharts();
   displayCurrentSelection();
   // d3.select("#cancer-bar-chart").on("click", handleCancerChartClick);
   // d3.select("#cancer-line-chart").on("click", handleCancerChartClick);
+});
+
+document.addEventListener("DOMContentLoaded", () => {
+  document
+    .getElementById("smoke-slider")
+    .addEventListener("input", updateCharts);
+  document.getElementById("aqi-slider").addEventListener("input", updateCharts);
+  document
+    .getElementById("cancer-slider")
+    .addEventListener("input", updateCharts);
+  displayCurrentSelection();
 });

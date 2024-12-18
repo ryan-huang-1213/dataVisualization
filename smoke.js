@@ -1,96 +1,103 @@
-// 將 D3 繪圖功能封裝並匯出
-export function updateSmokeChart(container, dataUrl) {
-    // 設定圖表寬度、高度與邊距
-    const margin = {top: 20, right: 30, bottom: 50, left: 70},
-          width = 800 - margin.left - margin.right,
-          height = 600 - margin.top - margin.bottom;
+import { lastSelectedYear } from './sharedState.js';
+import { getChartDimensions } from './main.js';
 
-    // 清空容器，避免重複渲染
-    d3.select(container).selectAll("*").remove();
+const csvPath = "./dataset/18歲以上人口目前吸菸率_utf8.csv";
 
-    // 創建SVG
-    const svg = d3.select(container)
-        .append("svg")
-        .attr("width", width + margin.left + margin.right)
-        .attr("height", height + margin.top + margin.bottom)
-        .append("g")
-        .attr("transform", `translate(${margin.left},${margin.top})`);
+// 更新吸菸金字塔圖
+export function updateSmokeChart() {
+  d3.csv(csvPath)
+    .then((data) => {
+      const filteredData = data.filter((d) => d["依年度別分 by year"] == lastSelectedYear);
+      
+      if (filteredData.length === 0) {
+        console.error(`無符合條件的資料。年份: ${lastSelectedYear}`);
+        return;
+      }
 
-    // 讀取CSV文件
-    d3.csv(dataUrl).then(function(data) {
-        // 資料處理: 只取年齡層資料
-        const filteredData = data.filter(d => d["類別"].includes("年齡別"));
-
-        // 提取年齡層與吸菸率（男女）
-        const ageGroups = filteredData.map(d => d["類別"].split("=")[1]);
-        const maleRates = filteredData.map(d => +d["男 Male (%)"]);
-        const femaleRates = filteredData.map(d => +d["女 Female (%)"]);
-
-        // 設定比例尺
-        const y = d3.scaleBand()
-            .domain(ageGroups)
-            .range([0, height])
-            .padding(0.3);
-
-        const xMale = d3.scaleLinear()
-            .domain([0, d3.max(maleRates)])
-            .range([width / 2, 0]);
-
-        const xFemale = d3.scaleLinear()
-            .domain([0, d3.max(femaleRates)])
-            .range([width / 2, width]);
-
-        // 加入X軸與Y軸
-        svg.append("g")
-            .attr("transform", `translate(0,${height})`)
-            .call(d3.axisBottom(xFemale).ticks(5));
-
-        svg.append("g")
-            .call(d3.axisLeft(y));
-
-        svg.append("g")
-            .attr("transform", `translate(${width / 2},0)`)
-            .call(d3.axisBottom(xMale).ticks(5));
-
-        // 男性吸菸率長條圖
-        svg.selectAll(".bar-male")
-            .data(filteredData)
-            .enter().append("rect")
-            .attr("class", "bar-male")
-            .attr("x", d => xMale(+d["男 Male (%)"]))
-            .attr("y", d => y(d["類別"].split("=")[1]))
-            .attr("width", d => width / 2 - xMale(+d["男 Male (%)"]))
-            .attr("height", y.bandwidth())
-            .attr("fill", "steelblue");
-
-        // 女性吸菸率長條圖
-        svg.selectAll(".bar-female")
-            .data(filteredData)
-            .enter().append("rect")
-            .attr("class", "bar-female")
-            .attr("x", width / 2)
-            .attr("y", d => y(d["類別"].split("=")[1]))
-            .attr("width", d => xFemale(+d["女 Female (%)"]) - width / 2)
-            .attr("height", y.bandwidth())
-            .attr("fill", "orange");
-
-        // 標示標題
-        svg.append("text")
-            .attr("x", width / 2)
-            .attr("y", -10)
-            .attr("text-anchor", "middle")
-            .style("font-size", "16px")
-            .text("不同年齡層吸菸率金字塔圖");
-
-        // 男性與女性標籤
-        svg.append("text")
-            .attr("x", 10)
-            .attr("y", height + 40)
-            .text("男性吸菸率 (%)");
-
-        svg.append("text")
-            .attr("x", width - 150)
-            .attr("y", height + 40)
-            .text("女性吸菸率 (%)");
+      drawSmokeChart(filteredData);
+    })
+    .catch((error) => {
+      console.error("載入 CSV 檔案失敗：", error);
     });
+}
+
+function drawSmokeChart(data) {
+  const { width, height } = getChartDimensions("#smoking-chart");
+  const margin = { top: 20, right: 20, bottom: 40, left: 40 };
+  const chartWidth = width - margin.left - margin.right;
+  const chartHeight = height - margin.top - margin.bottom;
+
+  d3.select("#smoking-chart").html("");
+
+  const svg = d3
+    .select("#smoking-chart")
+    .append("svg")
+    .attr("width", width)
+    .attr("height", height)
+    .append("g")
+    .attr("transform", `translate(${margin.left},${margin.top})`);
+
+  const ageGroups = Array.from(new Set(data.map((d) => d.AgeGroup)));
+  const maxRate = d3.max(data, (d) => Math.max(+d.MaleRate, +d.FemaleRate));
+
+  const xScale = d3.scaleLinear().domain([0, maxRate]).range([0, chartWidth / 2]);
+  const yScale = d3
+    .scaleBand()
+    .domain(ageGroups)
+    .range([0, chartHeight])
+    .padding(0.1);
+
+  // 男性吸菸率 (左側)
+  svg
+    .selectAll(".male-bar")
+    .data(data)
+    .enter()
+    .append("rect")
+    .attr("class", "male-bar")
+    .attr("x", (d) => chartWidth / 2 - xScale(+d.MaleRate))
+    .attr("y", (d) => yScale(d.AgeGroup))
+    .attr("width", (d) => xScale(+d.MaleRate))
+    .attr("height", yScale.bandwidth())
+    .attr("fill", "#1f77b4");
+
+  // 女性吸菸率 (右側)
+  svg
+    .selectAll(".female-bar")
+    .data(data)
+    .enter()
+    .append("rect")
+    .attr("class", "female-bar")
+    .attr("x", chartWidth / 2)
+    .attr("y", (d) => yScale(d.AgeGroup))
+    .attr("width", (d) => xScale(+d.FemaleRate))
+    .attr("height", yScale.bandwidth())
+    .attr("fill", "#ff7f0e");
+
+  // 年齡層標籤
+  svg
+    .selectAll(".age-label")
+    .data(ageGroups)
+    .enter()
+    .append("text")
+    .attr("class", "age-label")
+    .attr("x", chartWidth / 2)
+    .attr("y", (d) => yScale(d) + yScale.bandwidth() / 2)
+    .attr("text-anchor", "middle")
+    .attr("alignment-baseline", "middle")
+    .text((d) => d);
+
+  // 標示軸標題
+  svg
+    .append("text")
+    .attr("x", chartWidth / 4)
+    .attr("y", chartHeight + margin.bottom - 10)
+    .attr("text-anchor", "middle")
+    .text("男性吸菸率 (%)");
+
+  svg
+    .append("text")
+    .attr("x", (chartWidth / 4) * 3)
+    .attr("y", chartHeight + margin.bottom - 10)
+    .attr("text-anchor", "middle")
+    .text("女性吸菸率 (%)");
 }

@@ -50,7 +50,6 @@ function aggregateAQIData(data) {
         parseFloat(d[(i + 1).toString().padStart(2, "0")] || "0")
       ),
     ];
-
     // 過濾出有效的 AQI 數值
     const validValues = values.filter((v) => !isNaN(v) && v > 0);
     const sum = validValues.reduce((acc, v) => acc + v, 0); // 加總有效值
@@ -199,7 +198,7 @@ export function updateAQILineGraph(county, width, height) {
 // 分組並計算每年平均 AQI
 function groupAQIDataByYear(data) {
   const result = {};
-
+  
   data.forEach((d) => {
     const year = d["日期"].substring(0, 4); // 提取年份
     const values = Array.from(

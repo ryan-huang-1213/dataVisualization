@@ -2,6 +2,7 @@
 import { updateCancerBarGraph, updateCancerLineGraph } from "./cancer.js";
 import { updateAQIBarGraph, updateAQILineGraph } from "./aqi.js";
 import { updateSmokeChart } from "./smoke.js"
+import { drawTaiwan } from "./taiwan.js";
 import {
   lastSelectedYear,
   lastSelectedCounty,
@@ -76,11 +77,12 @@ function handleCancerChartClick(event) {
   updateCharts();
 }
 
-function updateCharts() {
+export function updateCharts() {
   const cancerBarChartSize = getChartDimensions("#cancer-bar-chart");
   const cancerLineChartSize = getChartDimensions("#cancer-line-chart");
   const aqiBarChartSize = getChartDimensions("#aqi-bar-chart");
   const aqiLineChartSize = getChartDimensions("#aqi-line-chart");
+  const mapSize = getChartDimensions("#taiwan");
 
   updateCancerBarGraph(
     lastSelectedYear,
@@ -106,6 +108,12 @@ function updateCharts() {
     '.smoking-graph', 
     './dataset/18歲以上人口目前吸菸率_utf8.csv'
   )
+  drawTaiwan(
+    lastSelectedCounty,
+    lastSelectedYear,
+    mapSize.width,
+    mapSize.height
+  );
 }
 
 document.addEventListener("DOMContentLoaded", () => {

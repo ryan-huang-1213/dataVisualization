@@ -4,6 +4,7 @@ import {
   lastSelectedCounty,
   setLastSelectedYear,
   setLastSelectedCounty,
+  displayCurrentSelection,
 } from "./sharedState.js";
 
 import { updateAQIBarGraph, updateAQILineGraph } from "./aqi.js";
@@ -32,7 +33,7 @@ export function updateCancerBarGraph(year, width, height) {
       const groupedData = aggregateCancerData(filteredData);
       drawCancerBarGraph(groupedData, width, height);
 
-      displayCurrentSelection();
+      // displayCurrentSelection();
     })
     .catch((error) => {
       console.error("載入 CSV 檔案失敗：", error);
@@ -177,40 +178,9 @@ function drawCancerBarGraph(data, width, height) {
           // 隱藏 tooltip 並重新繪製圖表
           tooltip.style("display", "none");
           setLastSelectedCounty(county);
-          updateCancerBarGraph(lastSelectedYear, width, height);
-          const cancerlinechartsize = getChartDimensions("#cancer-line-chart");
-          updateCancerLineGraph(
-            lastSelectedCounty,
-            cancerlinechartsize.width,
-            cancerlinechartsize.height
-          );
-          const aqibargraph = getChartDimensions("#aqi-bar-chart");
-          updateAQIBarGraph(
-            lastSelectedYear,
-            aqibargraph.width,
-            aqibargraph.height
-          );
         });
     });
   });
-}
-
-function displayCurrentSelection() {
-  const selectionDiv = d3.select("#current-selection");
-  if (selectionDiv.empty()) {
-    d3.select("body")
-      .append("div")
-      .attr("id", "current-selection")
-      .style("position", "absolute")
-      .style("top", "10px")
-      .style("right", "10px")
-      .style("background-color", "#f0f0f0")
-      .style("padding", "10px")
-      .style("border", "1px solid #ccc");
-  }
-  d3.select("#current-selection").html(
-    `目前選擇: 縣市 - ${lastSelectedCounty}，年份 - ${lastSelectedYear}`
-  );
 }
 
 // 更新癌症折線圖
@@ -332,6 +302,48 @@ function drawCancerLineGraph(groupedData, width, height, county) {
       .text((d) => `年份: ${d.year}\n發生率: ${d.incidence.toFixed(2)}`);
   });
 
+  // 可拖曳的垂直線
+  let currentX = x(lastSelectedYear); // 初始直線位置
+  const dragLine = svg
+    .append("line")
+    .attr("x1", currentX)
+    .attr("x2", currentX)
+    .attr("y1", padding)
+    .attr("y2", height - padding)
+    .attr("stroke", "orange")
+    .attr("stroke-width", 4) // 寬度加大，便於拖曳
+    .attr("stroke-dasharray", "4,4")
+    .style("cursor", "ew-resize");
+
+  const yearLabel = svg
+    .append("text")
+    .attr("x", currentX + 5)
+    .attr("y", padding - 10)
+    .attr("fill", "orange")
+    .style("font-size", "12px")
+    .style("font-weight", "bold")
+    .text(`Year: ${lastSelectedYear}`);
+
+  // 定義拖曳行為
+  var nearestYear = null;
+  const drag = d3
+    .drag()
+    .on("drag", (event) => {
+      // 限制拖曳範圍並計算最接近的年份
+      const mouseX = Math.max(padding, Math.min(width - padding, event.x));
+      nearestYear = Math.round(x.invert(mouseX)); // 轉換座標並取最接近的年份
+      currentX = x(nearestYear); // 將年份映射回 X 軸的座標
+
+      // 更新直線和標籤
+      dragLine.attr("x1", currentX).attr("x2", currentX);
+      yearLabel.attr("x", currentX + 5).text(`Year: ${nearestYear}`);
+    })
+    .on("end", () => {
+      // 更新 lastSelectedYear
+      setLastSelectedYear(nearestYear);
+    });
+
+  dragLine.call(drag);
   // 添加標題
   svg
     .append("text")

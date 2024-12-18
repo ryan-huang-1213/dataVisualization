@@ -11,6 +11,8 @@ const csvPath = "./dataset/AQI_merged_utf8_cleaned.csv";
 
 // 更新 AQI 長條圖
 export function updateAQIBarGraph(year, width, height) {
+  d3.selectAll("#tooltip").remove();
+  
   d3.csv(csvPath)
     .then((data) => {
       // 檢查日期格式並修正
@@ -22,11 +24,12 @@ export function updateAQIBarGraph(year, width, height) {
 
       // 過濾出選定年份的數據
       const filteredData = data.filter(
-        (d) => d["日期"]?.startsWith(year) && !isNaN(parseFloat(d["01"])) // 確保數值有效
+        (d) => d["日期"]?.startsWith(year)
       );
 
       if (filteredData.length === 0) {
         console.error(`無符合條件的資料。年份: ${year}`);
+        d3.select("#aqi-bar-chart").selectAll("svg").remove();
         return;
       }
 
@@ -74,8 +77,20 @@ function aggregateAQIData(data) {
 }
 
 function drawAQIBarGraph(data, width, height) {
-  const padding = 40;
+  const padding = { top: 20, left: 30, bottom: 40, right: 20 }
   d3.select("#aqi-bar-chart").selectAll("svg").remove();
+
+  const tooltip = d3
+    .select("body")
+    .append("div")
+    .attr("id", "tooltip")
+    .style("position", "absolute")
+    .style("background", "rgba(255, 255, 255, 0.9)")
+    .style("border", "1px solid #ddd")
+    .style("padding", "8px")
+    .style("display", "none")
+    .style("pointer-events", "none")
+    .style("box-shadow", "0 0 6px rgba(0, 0, 0, 0.2)");
 
   const svg = d3
     .select("#aqi-bar-chart")
@@ -86,18 +101,18 @@ function drawAQIBarGraph(data, width, height) {
   const x = d3
     .scaleBand()
     .domain(data.map(([county]) => county))
-    .range([padding, width - padding])
+    .range([padding.left, width - padding.right])
     .padding(0.2);
 
   const y = d3
     .scaleLinear()
     .domain([0, d3.max(data, ([, value]) => value)])
     .nice()
-    .range([height - padding, padding]);
+    .range([height - padding.bottom, padding.top]);
 
   svg
     .append("g")
-    .attr("transform", `translate(0, ${height - padding})`)
+    .attr("transform", `translate(0, ${height - padding.bottom})`)
     .call(d3.axisBottom(x))
     .selectAll("text")
     .attr("transform", "rotate(-90)")
@@ -107,25 +122,31 @@ function drawAQIBarGraph(data, width, height) {
 
   svg
     .append("g")
-    .attr("transform", `translate(${padding}, 0)`)
+    .attr("transform", `translate(${padding.left}, 0)`)
     .call(d3.axisLeft(y));
 
-  // 記錄當前選取的矩形
-  let selectedRect = null;
-
   data.forEach(([county, value]) => {
-    const rect = svg
+    svg
       .append("rect")
       .attr("x", x(county))
       .attr("y", y(value))
       .attr("width", x.bandwidth())
-      .attr("height", height - padding - y(value))
+      .attr("height", height - padding.bottom - y(value))
       .attr("fill", county === lastSelectedCounty ? "orange" : "steelblue") // 根據選取狀態設置顏色
       .style("cursor", "pointer")
       .on("mouseover", function () {
-        d3.select(this).attr("fill", "lightblue"); // 懸停顏色
+        d3.select(this).attr("fill", "lightblue");
+        tooltip
+            .style("display", "block")
+            .html(
+              `<strong>縣市:</strong> ${county}<br>` +
+                `<strong>平均AQI:</strong> ${value.toFixed(2)}`
+            )
+            .style("left", `${event.pageX + 10}px`)
+            .style("top", `${event.pageY - 20}px`);
       })
       .on("mouseout", function () {
+        tooltip.style("display", "none");
         d3.select(this).attr("fill", county === lastSelectedCounty ? "orange" : "steelblue"); // 恢復狀態顏色
       })
       .on("click", function () {
@@ -163,11 +184,18 @@ export function updateAQILineGraph(county, width, height) {
 
       if (filteredData.length === 0) {
         console.error(`無符合條件的資料。縣市 : ${lastSelectedCounty}`);
+        d3.select("#aqi-line-chart").selectAll("svg").remove();
         return;
       }
 
       // 分組並計算每年平均 AQI
       const yearlyData = groupAQIDataByYear(filteredData);
+
+      if (yearlyData === null) {
+        console.error(`無符合條件的資料。年份 : ${lastSelectedYear}`);
+        d3.select("#aqi-line-chart").selectAll("svg").remove();
+        return;
+      }
 
       // 排序年份
       const sortedData = Object.entries(yearlyData)
@@ -185,9 +213,13 @@ export function updateAQILineGraph(county, width, height) {
 // 分組並計算每年平均 AQI
 function groupAQIDataByYear(data) {
   const result = {};
+  let yearMin = 10000;
   
   data.forEach((d) => {
     const year = d["日期"].substring(0, 4); // 提取年份
+    if (parseInt(year) < yearMin) {
+      yearMin = parseInt(year);
+    }
     const values = Array.from(
       { length: 24 },
       (_, i) => parseFloat(d[(i + 1).toString().padStart(2, "0")]) || 0
@@ -202,6 +234,10 @@ function groupAQIDataByYear(data) {
     result[year].count++;
   });
 
+  if (lastSelectedYear < yearMin) {
+    return null;
+  }
+
   // 計算每年的平均值
   Object.keys(result).forEach((year) => {
     result[year] = result[year].sum / result[year].count;
@@ -213,7 +249,6 @@ function groupAQIDataByYear(data) {
 // 繪製折線圖 (以年份為 X 軸)
 function drawAQILineGraphByYear(data, width, height, county) {
   const padding = 50;
-
   d3.select("#aqi-line-chart").selectAll("svg").remove();
 
   const svg = d3

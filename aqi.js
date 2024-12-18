@@ -120,29 +120,16 @@ function drawAQIBarGraph(data, width, height) {
       .attr("y", y(value))
       .attr("width", x.bandwidth())
       .attr("height", height - padding - y(value))
-      .attr("fill", "steelblue")
-      .style("cursor", "pointer") // 滑鼠游標變成 pointer
+      .attr("fill", county === lastSelectedCounty ? "orange" : "steelblue") // 根據選取狀態設置顏色
+      .style("cursor", "pointer")
       .on("mouseover", function () {
-        d3.select(this).attr("fill", "orange"); // 滑鼠懸停時變成橘色
+        d3.select(this).attr("fill", "lightblue"); // 懸停顏色
       })
       .on("mouseout", function () {
-        // 如果不是選取的矩形，恢復原色
-        if (this !== selectedRect) {
-          d3.select(this).attr("fill", "steelblue");
-        }
+        d3.select(this).attr("fill", county === lastSelectedCounty ? "orange" : "steelblue"); // 恢復狀態顏色
       })
       .on("click", function () {
-        // 恢復上一次選取的矩形顏色
-        if (selectedRect) {
-          d3.select(selectedRect).attr("fill", "steelblue");
-        }
-        // 設定新選取的矩形為橘色
-        d3.select(this).attr("fill", "orange");
-        selectedRect = this;
-
-        // 調用折線圖函式
-        const linechartSize = getChartDimensions("#aqi-line-chart");
-        updateAQILineGraph(county, linechartSize.width, linechartSize.height);
+        setLastSelectedCounty(county); // 更新選取的縣市
       });
   });
 }
@@ -286,6 +273,49 @@ function drawAQILineGraphByYear(data, width, height, county) {
     .attr("fill", "red")
     .append("title")
     .text((d) => `年份: ${d.year}\n平均 AQI: ${d.avg.toFixed(2)}`);
+
+  // 可拖曳的垂直線
+  let currentX = x(lastSelectedYear); // 初始直線位置
+  const dragLine = svg
+    .append("line")
+    .attr("x1", currentX)
+    .attr("x2", currentX)
+    .attr("y1", padding)
+    .attr("y2", height - padding)
+    .attr("stroke", "orange")
+    .attr("stroke-width", 4) // 寬度加大，便於拖曳
+    .attr("stroke-dasharray", "4,4")
+    .style("cursor", "ew-resize");
+
+  const yearLabel = svg
+    .append("text")
+    .attr("x", currentX - 28)
+    .attr("y", padding - 8)
+    .attr("fill", "orange")
+    .style("font-size", "12px")
+    .style("font-weight", "bold")
+    .text(`Year: ${lastSelectedYear}`);
+
+  // 定義拖曳行為
+  var nearestYear = null;
+  const drag = d3
+    .drag()
+    .on("drag", (event) => {
+      // 限制拖曳範圍並計算最接近的年份
+      const mouseX = Math.max(padding, Math.min(width - padding, event.x));
+      nearestYear = Math.round(x.invert(mouseX)); // 轉換座標並取最接近的年份
+      currentX = x(nearestYear); // 將年份映射回 X 軸的座標
+
+      // 更新直線和標籤
+      dragLine.attr("x1", currentX).attr("x2", currentX);
+      yearLabel.attr("x", currentX - 28).text(`Year: ${nearestYear}`);
+    })
+    .on("end", () => {
+      // 更新 lastSelectedYear
+      setLastSelectedYear(nearestYear);
+    });
+
+  dragLine.call(drag);
 
   // 添加標題
   svg

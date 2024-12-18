@@ -317,8 +317,8 @@ function drawCancerLineGraph(groupedData, width, height, county) {
 
   const yearLabel = svg
     .append("text")
-    .attr("x", currentX + 5)
-    .attr("y", padding - 10)
+    .attr("x", currentX - 28)
+    .attr("y", padding - 8)
     .attr("fill", "orange")
     .style("font-size", "12px")
     .style("font-weight", "bold")
@@ -336,7 +336,7 @@ function drawCancerLineGraph(groupedData, width, height, county) {
 
       // 更新直線和標籤
       dragLine.attr("x1", currentX).attr("x2", currentX);
-      yearLabel.attr("x", currentX + 5).text(`Year: ${nearestYear}`);
+      yearLabel.attr("x", currentX - 28).text(`Year: ${nearestYear}`);
     })
     .on("end", () => {
       // 更新 lastSelectedYear

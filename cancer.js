@@ -135,10 +135,7 @@ function drawCancerBarGraph(data, width, height, selectedGender) {
       .attr("x", x(county))
       .attr("y", y(gender[selectedGender]))
       .attr("width", x.bandwidth())
-      .attr(
-        "height",
-        height - padding.bottom - y(Math.max(total, male, female))
-      )
+      .attr("height", height - padding.bottom - y(gender[selectedGender]))
       .attr("fill", "none")
       .attr("stroke", county === lastSelectedCounty ? "red" : "none")
       .attr("stroke-width", 3);

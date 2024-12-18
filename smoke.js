@@ -15,6 +15,7 @@ export function updateSmokeChart(year, width, height) {
 
     if (filteredData.length === 0) {
       console.error(`無符合條件的資料。年份: ${lastSelectedYear}`);
+      d3.select("#smoking-chart").selectAll("svg").remove();
       return;
     }
 

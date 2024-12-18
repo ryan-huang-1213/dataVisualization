@@ -66,7 +66,7 @@ function aggregateCancerData(data) {
 }
 
 function drawCancerBarGraph(data, width, height) {
-  const padding = 40;
+  const padding = { top: 20, left: 30, bottom: 40, right: 20 }
   d3.select("#cancer-bar-chart").selectAll("svg").remove();
 
   // Tooltip 定義
@@ -99,8 +99,8 @@ function drawCancerBarGraph(data, width, height) {
   const x = d3
     .scaleBand()
     .domain(sortedData.map(([county]) => county))
-    .range([padding, width - padding])
-    .padding(0.2);
+    .range([padding.left, width - padding.right])
+    .padding(0.3);
 
   const y = d3
     .scaleLinear()
@@ -111,11 +111,11 @@ function drawCancerBarGraph(data, width, height) {
       ),
     ])
     .nice()
-    .range([height - padding, padding]);
+    .range([height - padding.bottom, padding.top]);
 
   svg
     .append("g")
-    .attr("transform", `translate(0, ${height - padding})`)
+    .attr("transform", `translate(0, ${height - padding.bottom})`)
     .call(d3.axisBottom(x))
     .selectAll("text")
     .attr("transform", "rotate(-90)")
@@ -125,7 +125,7 @@ function drawCancerBarGraph(data, width, height) {
 
   svg
     .append("g")
-    .attr("transform", `translate(${padding}, 0)`)
+    .attr("transform", `translate(${padding.left}, 0)`)
     .call(d3.axisLeft(y));
 
   sortedData.forEach(([county, { total, male, female }]) => {
@@ -137,7 +137,7 @@ function drawCancerBarGraph(data, width, height) {
       .attr("x", x(county))
       .attr("y", y(Math.max(total, male, female)))
       .attr("width", x.bandwidth())
-      .attr("height", height - padding - y(Math.max(total, male, female)))
+      .attr("height", height - padding.bottom - y(Math.max(total, male, female)))
       .attr("fill", "none")
       .attr("stroke", county === lastSelectedCounty ? "red" : "none")
       .attr("stroke-width", 3);
@@ -152,9 +152,10 @@ function drawCancerBarGraph(data, width, height) {
         .attr("x", x(county) + barWidth * i)
         .attr("y", y(value))
         .attr("width", barWidth)
-        .attr("height", height - padding - y(value))
+        .attr("height", height - padding.bottom - y(value))
         .attr("fill", color)
         .attr("data-county", county)
+        .style("cursor", "pointer")
         .on("mouseover", (event) => {
           tooltip
             .style("display", "block")

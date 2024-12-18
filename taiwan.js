@@ -3,6 +3,7 @@ import { lastSelectedCounty, setLastSelectedCounty } from "./sharedState.js";
 
 let taiwanData = null; // 用於儲存 taiwan.json 資料
 const cancerCsv = "./dataset/癌症發生統計_utf8.csv";
+const aqiCsv = "./dataset/AQI_merged_utf8_cleaned.csv";
 
 // 繪製地圖函數
 export function drawTaiwan(county, year, width, height) {
@@ -130,23 +131,80 @@ function renderMap(county, year, width, height) {
       .attr("vector-effect", "non-scaling-stroke");
   }
 
-  var customData = [
-    { name: "站點A", coord: [121.5654, 25.033], value: 300, year: 1995 },
-    { name: "站點B", coord: [120.6736, 24.1478], value: 150, year: 1990 },
-    { name: "站點C", coord: [120.3014, 23.147], value: 220, year: 2000 },
-  ].filter((d) => d.year === year);
+  d3.csv(aqiCsv).then((data) => {
+    const filteredData = data.filter( (d) =>
+      d["日期"]?.startsWith(year)
+    );
+    const result = {};
 
-  layer2
-    .selectAll("circle")
-    .data(customData)
-    .enter()
-    .append("circle")
-    .attr("cx", (d) => projection(d.coord)[0])
-    .attr("cy", (d) => projection(d.coord)[1])
-    .attr("r", 5)
-    .attr("fill", (d) => d3.interpolateReds(d.value / 300))
-    .append("title")
-    .text((d) => `${d.name}: ${d.value}`);
+    filteredData.forEach((d) => {
+      const county = d["county"]?.toString().trim();
+      const values = [
+        ...Array.from({ length: 24 }, (_, i) =>
+          parseFloat(d[(i + 1).toString().padStart(2, "0")] || "0")
+        ),
+      ];
+      // 過濾出有效的 AQI 數值
+      const validValues = values.filter((v) => !isNaN(v) && v > 0);
+      const sum = validValues.reduce((acc, v) => acc + v, 0); // 加總有效值
+  
+      if (!result[county]) {
+        result[county] = { sum: 0, count: 0 };
+      }
+  
+      // 累加縣市的 AQI 值與數量
+      result[county].sum += sum;
+      result[county].count += validValues.length;
+    });
+
+    const averageResult = Object.entries(result).map(([county, { sum, count }]) => {
+      return [county, count > 0 ? sum / count : 0];
+    });
+  
+    // 按平均值降序排列
+    averageResult.sort((a, b) => b[1] - a[1]);
+
+    averageResult.forEach(([county, avgAQI]) => {
+      const matchingFeature = taiwanData.features.find(
+        (f) => f.properties.NAME_2014 === county
+      );
+
+      if (matchingFeature) {
+        const centroid = geoGenerator.centroid(matchingFeature);
+        const tooltip = d3
+        .select("body")
+        .append("div")
+        .attr("id", "tooltip")
+        .style("position", "absolute")
+        .style("background", "rgba(255, 255, 255, 0.9)")
+        .style("border", "1px solid #ddd")
+        .style("padding", "8px")
+        .style("display", "none")
+        .style("pointer-events", "none")
+        .style("box-shadow", "0 0 6px rgba(0, 0, 0, 0.2)");
+
+        layer2
+          .append("circle")
+          .attr("cx", centroid[0])
+          .attr("cy", centroid[1])
+          .attr("r", 5)
+          .attr("fill", d3.scaleSequential(d3.interpolateReds).domain([0, 100])(avgAQI))
+          .on("mouseover", function () {
+            tooltip.style("display", "block").html(
+              `<strong>${county}</strong><br>平均 AQI: ${avgAQI.toFixed(2)}`
+            );
+          })
+          .on("mousemove", function (event) {
+            tooltip
+              .style("left", event.pageX + 10 + "px")
+              .style("top", event.pageY + 10 + "px");
+          })
+          .on("mouseout", function () {
+            tooltip.style("display", "none");
+          });
+      }
+    });
+  });
 
   // 從 CSV 檔案讀取癌症發生資料
   d3.csv(cancerCsv).then((data) => {
@@ -191,26 +249,7 @@ function renderMap(county, year, width, height) {
               .style("left", event.pageX + 10 + "px")
               .style("top", event.pageY + 10 + "px");
           })
-          .on("mouseout", () => tooltip.style("display", "none"))
-          .on("click", function (d) {
-            if (activePath && activePath.node() === this) {
-              activePath.attr("stroke", "white").attr("stroke-width", 1);
-              svg.select("rect.selection-box").remove();
-              activePath = null;
-              return;
-            }
-
-            if (activePath) {
-              activePath.attr("stroke", "white").attr("stroke-width", 1);
-              svg.select("rect.selection-box").remove();
-            }
-
-            activePath = d3.select(this);
-            setLastSelectedCounty(d.properties.NAME_2014);
-
-            const bounds = geoGenerator.bounds(d);
-            drawSelectionBox(svg, bounds);
-          });
+          .on("mouseout", () => tooltip.style("display", "none"));
       }
     });
   });
@@ -260,4 +299,4 @@ function renderMap(county, year, width, height) {
     });
 
   // console.log(`Taiwan map updated for ${county} (${year})`);
-}
+  }

@@ -84,7 +84,7 @@ function renderMap(county, year, width, height) {
     .on("click", function (event, d) {
       if (activePath && activePath.node() === this) {
         activePath.attr("stroke", "white").attr("stroke-width", 1);
-        svg.select("rect.selection-box").remove(); // 移除舊框
+        svg.select("rect.selection-box").remove();
         activePath = null;
         return;
       }
@@ -98,28 +98,40 @@ function renderMap(county, year, width, height) {
       setLastSelectedCounty(d.properties.NAME_2014);
 
       const bounds = geoGenerator.bounds(d);
-      const x0 = bounds[0][0],
-        y0 = bounds[0][1];
-      const x1 = bounds[1][0],
-        y1 = bounds[1][1];
-
-      svg
-        .append("rect")
-        .attr("class", "selection-box")
-        .attr("x", x0)
-        .attr("y", y0)
-        .attr("width", x1 - x0)
-        .attr("height", y1 - y0)
-        .attr("fill", "none")
-        .attr("stroke", "black")
-        .attr("stroke-width", 1.5)
-        .attr("vector-effect", "non-scaling-stroke");
+      drawSelectionBox(svg, bounds);
     });
 
+  // 檢查外部選擇狀態
+  const preSelectedFeature = taiwanData.features.find(
+    (f) => f.properties.NAME_2014 === lastSelectedCounty
+  );
+
+  if (preSelectedFeature) {
+    const bounds = geoGenerator.bounds(preSelectedFeature);
+    drawSelectionBox(svg, bounds);
+  }
+
+  function drawSelectionBox(svg, bounds) {
+    const [x0, y0] = bounds[0];
+    const [x1, y1] = bounds[1];
+
+    svg
+      .append("rect")
+      .attr("class", "selection-box")
+      .attr("x", x0)
+      .attr("y", y0)
+      .attr("width", x1 - x0)
+      .attr("height", y1 - y0)
+      .attr("fill", "none")
+      .attr("stroke", "black")
+      .attr("stroke-width", 1.5)
+      .attr("vector-effect", "non-scaling-stroke");
+  }
+
   var customData = [
-    { name: "站點A", coord: [121.5654, 25.033], value: 300 },
-    { name: "站點B", coord: [120.6736, 24.1478], value: 150 },
-    { name: "站點C", coord: [120.3014, 23.147], value: 220 },
+    { name: "站點A", coord: [121.5654, 25.033], value: 300, year: 1995 },
+    { name: "站點B", coord: [120.6736, 24.1478], value: 150, year: 1990 },
+    { name: "站點C", coord: [120.3014, 23.147], value: 220, year: 2000 },
   ];
 
   layer2

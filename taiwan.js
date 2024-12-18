@@ -2,6 +2,7 @@
 import { lastSelectedCounty, setLastSelectedCounty } from "./sharedState.js";
 
 let taiwanData = null; // 用於儲存 taiwan.json 資料
+const cancerCsv = "./dataset/癌症發生統計_utf8.csv";
 
 // 繪製地圖函數
 export function drawTaiwan(county, year, width, height) {
@@ -57,8 +58,9 @@ function renderMap(county, year, width, height) {
 
   // 添加圖層
   const layers = svg.append("g").attr("class", "layers");
-  const layer1 = layers.append("g").attr("class", "layer1");
-  const layer2 = layers.append("g").attr("class", "layer2");
+  const layer1 = layers.append("g").attr("class", "layer1"); // 地圖選擇器
+  const layer3 = layers.append("g").attr("class", "layer3"); // 癌症發生率
+  const layer2 = layers.append("g").attr("class", "layer2"); // 各測站AQI
 
   var activePath = null;
 
@@ -132,7 +134,7 @@ function renderMap(county, year, width, height) {
     { name: "站點A", coord: [121.5654, 25.033], value: 300, year: 1995 },
     { name: "站點B", coord: [120.6736, 24.1478], value: 150, year: 1990 },
     { name: "站點C", coord: [120.3014, 23.147], value: 220, year: 2000 },
-  ];
+  ].filter((d) => d.year === year);
 
   layer2
     .selectAll("circle")
@@ -145,6 +147,73 @@ function renderMap(county, year, width, height) {
     .attr("fill", (d) => d3.interpolateReds(d.value / 300))
     .append("title")
     .text((d) => `${d.name}: ${d.value}`);
+
+  // 從 CSV 檔案讀取癌症發生資料
+  d3.csv(cancerCsv).then((data) => {
+    const filteredData = data.filter(
+      (d) =>
+        d["癌症診斷年"]?.toString().trim() == year &&
+        d["性別"]?.toString().trim() === "全" &&
+        d["癌症別"]?.toString().trim().includes("肺、支氣管及氣管") &&
+        d["縣市別"]?.toString().trim() !== "全國"
+    );
+
+    filteredData.forEach((d) => {
+      const county = d["縣市別"].trim();
+      const rate = parseFloat(
+        d["年齡標準化發生率  WHO 2000世界標準人口 (每10萬人口)"].replace(
+          /[^0-9.]/g,
+          ""
+        ) || "0"
+      );
+
+      const matchingFeature = taiwanData.features.find(
+        (f) => f.properties.NAME_2014 === county
+      );
+
+      if (matchingFeature) {
+        layer3
+          .append("path")
+          .attr("d", geoGenerator(matchingFeature))
+          .attr("fill", d3.interpolateReds(rate / 100))
+          .attr("stroke", "white")
+          .on("mouseover", function (event) {
+            tooltip
+              .style("display", "block")
+              .html(
+                `<strong>縣市:</strong> ${county}<br><strong>發生率:</strong> ${rate.toFixed(
+                  2
+                )}`
+              );
+          })
+          .on("mousemove", function (event) {
+            tooltip
+              .style("left", event.pageX + 10 + "px")
+              .style("top", event.pageY + 10 + "px");
+          })
+          .on("mouseout", () => tooltip.style("display", "none"))
+          .on("click", function (d) {
+            if (activePath && activePath.node() === this) {
+              activePath.attr("stroke", "white").attr("stroke-width", 1);
+              svg.select("rect.selection-box").remove();
+              activePath = null;
+              return;
+            }
+
+            if (activePath) {
+              activePath.attr("stroke", "white").attr("stroke-width", 1);
+              svg.select("rect.selection-box").remove();
+            }
+
+            activePath = d3.select(this);
+            setLastSelectedCounty(d.properties.NAME_2014);
+
+            const bounds = geoGenerator.bounds(d);
+            drawSelectionBox(svg, bounds);
+          });
+      }
+    });
+  });
 
   var checkboxContainer = svg
     .append("foreignObject")
@@ -162,25 +231,33 @@ function renderMap(county, year, width, height) {
 
   checkboxContainer
     .append("label")
-    .text("Layer 1")
+    .text("台灣地圖 ")
     .append("input")
     .attr("type", "checkbox")
     .attr("checked", true)
     .on("change", function () {
       layer1.style("display", this.checked ? "block" : "none");
     });
-
   checkboxContainer.append("br");
-
   checkboxContainer
     .append("label")
-    .text("Layer 2")
+    .text("各縣市AQI ")
     .append("input")
     .attr("type", "checkbox")
     .attr("checked", true)
     .on("change", function () {
       layer2.style("display", this.checked ? "block" : "none");
     });
+  checkboxContainer.append("br");
+  checkboxContainer
+    .append("label")
+    .text("癌症發生率 ")
+    .append("input")
+    .attr("type", "checkbox")
+    .attr("checked", true)
+    .on("change", function () {
+      layer3.style("display", this.checked ? "block" : "none");
+    });
 
-  console.log(`Taiwan map updated for ${county} (${year})`);
+  // console.log(`Taiwan map updated for ${county} (${year})`);
 }

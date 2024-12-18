@@ -11,6 +11,8 @@ import {
   displayCurrentSelection,
 } from "./sharedState.js";
 
+document.getElementById("gender-select").addEventListener("change", updateCharts)
+
 export function getChartDimensions(selector) {
   const chart = document.querySelector(selector);
   return { width: chart.clientWidth, height: chart.clientHeight };

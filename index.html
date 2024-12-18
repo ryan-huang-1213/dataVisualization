@@ -31,27 +31,6 @@
                         資工 115 張訓豪 <br>
                         資工 115 黃國展
                     </p>
-                    
-                    <!-- <div class="radio-choice align-self-center">
-                        <div class="form-check d-flex flex-row align-items-center my-3">
-                            <input class="form-check-input" type="radio" value="1" id="map-aqi" name="map">
-                            <label class="form-check-label" for="map-aqi">
-                                AQI指數
-                            </label>
-                        </div>
-                        <div class="form-check d-flex flex-row align-items-center my-3">
-                            <input class="form-check-input" type="radio" value="2" id="map-smoke" name="map">
-                            <label class="form-check-label" for="map-smoke">
-                                吸菸人數
-                            </label>
-                        </div>
-                        <div class="form-check d-flex flex-row align-items-center my-3">
-                            <input class="form-check-input" type="radio" value="3" id="map-cancer" name="map">
-                            <label class="form-check-label" for="map-cancer">
-                                罹癌人數
-                            </label>
-                        </div>
-                    </div> -->
                 </div>
                 <div class="for-adjust d-flex d-row">
                     <div class="smoking-graph" id="smoking-chart"></div>
@@ -77,7 +56,15 @@
                 </div>
             </div>
             <div class="cancer-graph d-flex flex-row">
-                <div class="cancer-bar-graph" id="cancer-bar-chart"></div>
+                <div class="cancer-bar-graph" id="cancer-bar-chart">
+                    <div id="filter-gender" style="position: absolute; right: 45.5%;">
+                        <select id="gender-select">
+                            <option value="total">全部</option>
+                            <option value="male">男性</option>
+                            <option value="female">女性</option>
+                        </select>
+                    </div>
+                </div>
                 <div class="cancer-line-graph" id="cancer-line-chart"></div>
                 <div id="tooltip" style="position: absolute; opacity: 0; background: rgba(0, 0, 0, 0.7); color: white; padding: 5px; border-radius: 3px; pointer-events: none;"></div>
             </div>

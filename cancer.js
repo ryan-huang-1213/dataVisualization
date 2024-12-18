@@ -7,9 +7,6 @@ import {
   displayCurrentSelection,
 } from "./sharedState.js";
 
-import { updateAQIBarGraph, updateAQILineGraph } from "./aqi.js";
-import { getChartDimensions } from "./main.js";
-
 const csvPath = "./dataset/癌症發生統計_utf8.csv";
 
 // 更新癌症長條圖
@@ -31,7 +28,8 @@ export function updateCancerBarGraph(year, width, height) {
       }
 
       const groupedData = aggregateCancerData(filteredData);
-      drawCancerBarGraph(groupedData, width, height);
+      const genderSelect = document.getElementById("gender-select");
+      drawCancerBarGraph(groupedData, width, height, genderSelect.value);
 
       // displayCurrentSelection();
     })
@@ -65,7 +63,7 @@ function aggregateCancerData(data) {
   return Object.entries(result).sort((a, b) => b[1].total - a[1].total);
 }
 
-function drawCancerBarGraph(data, width, height) {
+function drawCancerBarGraph(data, width, height, selectedGender) {
   const padding = { top: 20, left: 30, bottom: 40, right: 20 }
   d3.select("#cancer-bar-chart").selectAll("svg").remove();
 
@@ -128,61 +126,54 @@ function drawCancerBarGraph(data, width, height) {
     .attr("transform", `translate(${padding.left}, 0)`)
     .call(d3.axisLeft(y));
 
-  sortedData.forEach(([county, { total, male, female }]) => {
-    const barWidth = x.bandwidth() / 3;
+  sortedData.forEach(([county, gender]) => {
+    const color = {'total': '#58D68D','male': '#87CEEB','female': '#FFC0CB'}
 
     // 繪製紅色邊框
     svg
       .append("rect")
       .attr("x", x(county))
-      .attr("y", y(Math.max(total, male, female)))
+      .attr("y", y(gender[selectedGender]))
       .attr("width", x.bandwidth())
-      .attr("height", height - padding.bottom - y(Math.max(total, male, female)))
+      .attr("height", height - padding.bottom - y(gender[selectedGender]))
       .attr("fill", "none")
       .attr("stroke", county === lastSelectedCounty ? "red" : "none")
       .attr("stroke-width", 3);
 
-    [
-      { value: total, color: "gray", label: "全" },
-      { value: male, color: "blue", label: "男" },
-      { value: female, color: "red", label: "女" },
-    ].forEach(({ value, color, label }, i) => {
-      svg
-        .append("rect")
-        .attr("x", x(county) + barWidth * i)
-        .attr("y", y(value))
-        .attr("width", barWidth)
-        .attr("height", height - padding.bottom - y(value))
-        .attr("fill", color)
-        .attr("data-county", county)
-        .style("cursor", "pointer")
-        .on("mouseover", (event) => {
-          tooltip
-            .style("display", "block")
-            .html(
-              `<strong>縣市:</strong> ${county}<br>` +
-                `<strong>類別:</strong> ${label}<br>` +
-                `<strong>發生率:</strong> ${value.toFixed(2)}`
-            )
-            .style("left", `${event.pageX + 10}px`)
-            .style("top", `${event.pageY - 20}px`);
-        })
-        .on("mousemove", (event) => {
-          tooltip
-            .style("left", `${event.pageX + 10}px`)
-            .style("top", `${event.pageY - 20}px`);
-        })
-        .on("mouseout", () => {
-          tooltip.style("display", "none");
-        })
-        .on("click", () => {
-          // 隱藏 tooltip 並重新繪製圖表
-          tooltip.style("display", "none");
-          setLastSelectedCounty(county);
-        });
-    });
+    svg
+      .append("rect")
+      .attr("x", x(county))
+      .attr("y", y(gender[selectedGender]))
+      .attr("width", x.bandwidth)
+      .attr("height", height - padding.bottom - y(gender[selectedGender]))
+      .attr("fill", color[selectedGender])
+      .attr("data-county", county)
+      .style("cursor", "pointer")
+      .on("mouseover", (event) => {
+        tooltip
+          .style("display", "block")
+          .html(
+            `<strong>縣市:</strong> ${county}<br>` +
+              `<strong>發生率:</strong> ${gender[selectedGender].toFixed(2)}`
+          )
+          .style("left", `${event.pageX + 10}px`)
+          .style("top", `${event.pageY - 20}px`);
+      })
+      .on("mousemove", (event) => {
+        tooltip
+          .style("left", `${event.pageX + 10}px`)
+          .style("top", `${event.pageY - 20}px`);
+      })
+      .on("mouseout", () => {
+        tooltip.style("display", "none");
+      })
+      .on("click", () => {
+        // 隱藏 tooltip 並重新繪製圖表
+        tooltip.style("display", "none");
+        setLastSelectedCounty(county);
+      });
   });
-}
+};
 
 // 更新癌症折線圖
 export function updateCancerLineGraph(county, width, height) {
@@ -276,7 +267,7 @@ function drawCancerLineGraph(groupedData, width, height, county) {
     .y((d) => y(d.incidence))
     .curve(d3.curveMonotoneX);
 
-  const colors = { total: "black", male: "blue", female: "red" };
+  const colors = { total: "#58D68D", male: "#87CEEB", female: "#FFC0CB" };
 
   // 繪製折線和數據點
   ["total", "male", "female"].forEach((key) => {
@@ -311,16 +302,15 @@ function drawCancerLineGraph(groupedData, width, height, county) {
     .attr("x2", currentX)
     .attr("y1", padding)
     .attr("y2", height - padding)
-    .attr("stroke", "orange")
-    .attr("stroke-width", 4) // 寬度加大，便於拖曳
-    .attr("stroke-dasharray", "4,4")
+    .attr("stroke", "red")
+    .attr("stroke-width", 3.5) // 寬度加大，便於拖曳
     .style("cursor", "ew-resize");
 
   const yearLabel = svg
     .append("text")
     .attr("x", currentX - 28)
     .attr("y", padding - 8)
-    .attr("fill", "orange")
+    .attr("fill", "red")
     .style("font-size", "12px")
     .style("font-weight", "bold")
     .text(`Year: ${lastSelectedYear}`);

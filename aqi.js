@@ -210,11 +210,15 @@ export function updateAQILineGraph(county, width, height) {
 function groupAQIDataByYear(data) {
   const result = {};
   let yearMin = 10000;
+  let yearMax = 0;
 
   data.forEach((d) => {
     const year = d["日期"].substring(0, 4); // 提取年份
     if (parseInt(year) < yearMin) {
       yearMin = parseInt(year);
+    }
+    if (parseInt(year) > yearMax) {
+      yearMax = parseInt(year);
     }
     const values = Array.from(
       { length: 24 },
@@ -230,7 +234,7 @@ function groupAQIDataByYear(data) {
     result[year].count++;
   });
 
-  if (lastSelectedYear < yearMin) {
+  if (lastSelectedYear < yearMin || lastSelectedYear > yearMax) {
     return null;
   }
 

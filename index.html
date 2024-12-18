@@ -8,6 +8,8 @@
 	<title>Final Project</title>
     <script src="https://d3js.org/d3.v6.min.js"></script>
     <script src="cancer.js" type="module"></script>
+    <script src="aqi.js" type="module"></script>
+    <script src="smoke.js" type="module"></script>
     <script src="main.js" type="module"></script>
     <script src="taiwan.js" type="module"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
@@ -45,7 +47,7 @@
                     </div>
                 </div>
                 <div class="for-adjust d-flex d-row">
-                    <div class="smoking-graph">吸菸資料顯示區域</div>
+                    <div class="smoking-graph" id="smoking-chart"></div>
                     <div class="slider">篩選滑桿</div>
                 </div>
             </div>

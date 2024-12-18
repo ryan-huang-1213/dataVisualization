@@ -1,6 +1,7 @@
 // main.js
 import { updateCancerBarGraph, updateCancerLineGraph } from "./cancer.js";
 import { updateAQIBarGraph, updateAQILineGraph } from "./aqi.js";
+import { updateSmokeChart } from "./smoke.js"
 import { drawTaiwan } from "./taiwan.js";
 import {
   lastSelectedYear,
@@ -103,6 +104,10 @@ export function updateCharts() {
     aqiLineChartSize.width,
     aqiLineChartSize.height
   );
+  updateSmokeChart(
+    '.smoking-graph', 
+    './dataset/18歲以上人口目前吸菸率_utf8.csv'
+  )
   drawTaiwan(
     lastSelectedCounty,
     lastSelectedYear,

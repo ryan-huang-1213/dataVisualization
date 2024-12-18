@@ -344,7 +344,6 @@ function drawCancerLineGraph(groupedData, width, height, county) {
     });
 
   dragLine.call(drag);
-
   // 添加標題
   svg
     .append("text")

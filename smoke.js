@@ -1,10 +1,9 @@
 import { lastSelectedYear } from './sharedState.js';
-import { getChartDimensions } from './main.js';
 
 const csvPath = "./dataset/updated_smoking_rate_data.csv";
 
 // 更新吸菸金字塔圖
-export function updateSmokeChart() {
+export function updateSmokeChart(year, width, height) {
   d3.csv(csvPath).then((data) => {
     // 使用 forEach 進行篩選
     const filteredData = [];
@@ -19,14 +18,13 @@ export function updateSmokeChart() {
       return;
     }
 
-    drawSmokeChart(filteredData);
+    drawSmokeChart(filteredData, width, height);
   }).catch((error) => {
     console.error("載入 CSV 檔案失敗：", error);
   });
 }
 
-function drawSmokeChart(data) {
-  const { width, height } = getChartDimensions("#smoking-chart");
+function drawSmokeChart(data, width, height) {
   const margin = { top: 20, right: 40, bottom: 60, left: 40 };
   const chartWidth = width - margin.left - margin.right;
   const chartHeight = height - margin.top - margin.bottom;

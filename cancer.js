@@ -325,22 +325,23 @@ function drawCancerLineGraph(groupedData, width, height, county) {
     .text(`Year: ${lastSelectedYear}`);
 
   // 定義拖曳行為
+  var nearestYear = null;
   const drag = d3
     .drag()
     .on("drag", (event) => {
       // 限制拖曳範圍並計算最接近的年份
       const mouseX = Math.max(padding, Math.min(width - padding, event.x));
-      const nearestYear = Math.round(x.invert(mouseX)); // 轉換座標並取最接近的年份
+      nearestYear = Math.round(x.invert(mouseX)); // 轉換座標並取最接近的年份
       currentX = x(nearestYear); // 將年份映射回 X 軸的座標
 
       // 更新直線和標籤
       dragLine.attr("x1", currentX).attr("x2", currentX);
       yearLabel.attr("x", currentX + 5).text(`Year: ${nearestYear}`);
-
+    })
+    .on("end", () => {
       // 更新 lastSelectedYear
       setLastSelectedYear(nearestYear);
-    })
-    .on("end", () => {});
+    });
 
   dragLine.call(drag);
 

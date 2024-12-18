@@ -1,28 +1,36 @@
-import { lastSelectedYear } from './sharedState.js';
+import { lastSelectedYear } from "./sharedState.js";
 
 const csvPath = "./dataset/updated_smoking_rate_data.csv";
 
 // 更新吸菸金字塔圖
 export function updateSmokeChart(year, width, height) {
-  d3.csv(csvPath).then((data) => {
-    // 使用 forEach 進行篩選
-    const filteredData = [];
-    data.forEach((d) => {
-      if (d.year == lastSelectedYear) {
-        filteredData.push(d);
+  const smokeValue = parseInt(
+    document.getElementById("smoke-slider").value,
+    10
+  );
+  d3.csv(csvPath)
+    .then((data) => {
+      // 使用 forEach 進行篩選
+      const filteredData = [];
+      data.forEach((d) => {
+        if (d.year == lastSelectedYear + smokeValue) {
+          filteredData.push(d);
+        }
+      });
+
+      if (filteredData.length === 0) {
+        console.error(
+          `無符合條件的資料。年份: ${lastSelectedYear + smokeValue}`
+        );
+        d3.select("#smoking-chart").selectAll("svg").remove();
+        return;
       }
+
+      drawSmokeChart(filteredData, width, height);
+    })
+    .catch((error) => {
+      console.error("載入 CSV 檔案失敗：", error);
     });
-
-    if (filteredData.length === 0) {
-      console.error(`無符合條件的資料。年份: ${lastSelectedYear}`);
-      d3.select("#smoking-chart").selectAll("svg").remove();
-      return;
-    }
-
-    drawSmokeChart(filteredData, width, height);
-  }).catch((error) => {
-    console.error("載入 CSV 檔案失敗：", error);
-  });
 }
 
 function drawSmokeChart(data, width, height) {
@@ -41,9 +49,14 @@ function drawSmokeChart(data, width, height) {
     .attr("transform", `translate(${margin.left},${margin.top})`);
 
   const ageGroups = data.map((d) => d["類別"]);
-  const maxRate = d3.max(data, (d) => Math.max(+d["男 Male (%)"], +d["女 Female (%)"]));
+  const maxRate = d3.max(data, (d) =>
+    Math.max(+d["男 Male (%)"], +d["女 Female (%)"])
+  );
 
-  const xScale = d3.scaleLinear().domain([0, maxRate]).range([0, chartWidth / 2]);
+  const xScale = d3
+    .scaleLinear()
+    .domain([0, maxRate])
+    .range([0, chartWidth / 2]);
   const yScale = d3
     .scaleBand()
     .domain(ageGroups)

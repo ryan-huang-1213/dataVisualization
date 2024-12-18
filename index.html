@@ -39,19 +39,30 @@
                             <div id="now-select">
                                 <!--這裡放當前選擇-->
                             </div>
-                            <div class="slider-section d-flex flex-row align-items-center my-2">
-                                <label for="smoke-slider" class="me-2">吸菸:</label>
-                                <input type="range" id="smoke-slider" min="-10" max="10" step="1" value="0" class="form-range">
+                            <div class="for-adjust d-flex flex-column">
+                                <div id="now-select">
+                                    <!--這裡放當前選擇-->
+                                </div>
+                                <div class="slider-section d-flex flex-column align-items-start my-2">
+                                    <label for="smoke-slider" class="me-2">吸菸: <span id="smoke-value">0</span></label>
+                                    <input type="range" id="smoke-slider" min="-10" max="10" step="1" value="0" class="form-range" style="width: 80%;" oninput="document.getElementById('smoke-value').innerText = this.value">
+                                    <div class="d-flex justify-content-between w-100" style="width: 80%;">
+                                    </div>
+                                </div>
+                                <div class="slider-section d-flex flex-column align-items-start my-2">
+                                    <label for="aqi-slider" class="me-2">AQI: <span id="aqi-value">0</span></label>
+                                    <input type="range" id="aqi-slider" min="-10" max="10" step="1" value="0" class="form-range" style="width: 80%;" oninput="document.getElementById('aqi-value').innerText = this.value">
+                                    <div class="d-flex justify-content-between w-100" style="width: 80%;">
+                                    </div>
+                                </div>
+                                <div class="slider-section d-flex flex-column align-items-start my-2">
+                                    <label for="cancer-slider" class="me-2">癌症發生率: <span id="cancer-value">0</span></label>
+                                    <input type="range" id="cancer-slider" min="-10" max="10" step="1" value="0" class="form-range" style="width: 80%;" oninput="document.getElementById('cancer-value').innerText = this.value">
+                                    <div class="d-flex justify-content-between w-100" style="width: 80%;">
+                                    </div>
+                                </div>
                             </div>
-                            <div class="slider-section d-flex flex-row align-items-center my-2">
-                                <label for="aqi-slider" class="me-2">AQI:</label>
-                                <input type="range" id="aqi-slider" min="-10" max="10" step="1" value="0" class="form-range">
-                            </div>
-                            <div class="slider-section d-flex flex-row align-items-center my-2">
-                                <label for="cancer-slider" class="me-2">癌症發生率:</label>
-                                <input type="range" id="cancer-slider" min="-10" max="10" step="1" value="0" class="form-range">
-                            </div>
-                        </div>
+                        </div>                                             
                     </div>
                 </div>
             </div>

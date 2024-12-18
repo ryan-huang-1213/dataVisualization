@@ -56,7 +56,6 @@ function aggregateAQIData(data) {
     // 過濾出有效的 AQI 數值
     const validValues = values.filter((v) => !isNaN(v) && v > 0);
     const sum = validValues.reduce((acc, v) => acc + v, 0); // 加總有效值
-    const avg = validValues.length > 0 ? sum / validValues.length : 0; // 計算平均值
 
     if (!result[county]) {
       result[county] = { sum: 0, count: 0 };
@@ -132,10 +131,10 @@ function drawAQIBarGraph(data, width, height) {
       .attr("y", y(value))
       .attr("width", x.bandwidth())
       .attr("height", height - padding.bottom - y(value))
-      .attr("fill", county === lastSelectedCounty ? "orange" : "steelblue") // 根據選取狀態設置顏色
+      .attr("fill", county === lastSelectedCounty ? "#F9701C" : "#9C10F6") // 根據選取狀態設置顏色
       .style("cursor", "pointer")
       .on("mouseover", function () {
-        d3.select(this).attr("fill", "lightblue");
+        d3.select(this).attr("fill", "#DE9CEE");
         tooltip
             .style("display", "block")
             .html(
@@ -147,7 +146,7 @@ function drawAQIBarGraph(data, width, height) {
       })
       .on("mouseout", function () {
         tooltip.style("display", "none");
-        d3.select(this).attr("fill", county === lastSelectedCounty ? "orange" : "steelblue"); // 恢復狀態顏色
+        d3.select(this).attr("fill", county === lastSelectedCounty ? "#F9701C" : "#9C10F6"); // 恢復狀態顏色
       })
       .on("click", function () {
         setLastSelectedCounty(county); // 更新選取的縣市
@@ -292,7 +291,7 @@ function drawAQILineGraphByYear(data, width, height, county) {
     .append("path")
     .datum(data)
     .attr("fill", "none")
-    .attr("stroke", "steelblue")
+    .attr("stroke", "black")
     .attr("stroke-width", 2)
     .attr("d", line);
 
@@ -305,7 +304,7 @@ function drawAQILineGraphByYear(data, width, height, county) {
     .attr("cx", (d) => x(d.year))
     .attr("cy", (d) => y(d.avg))
     .attr("r", 4)
-    .attr("fill", "red")
+    .attr("fill", "#08B211")
     .append("title")
     .text((d) => `年份: ${d.year}\n平均 AQI: ${d.avg.toFixed(2)}`);
 
@@ -317,16 +316,15 @@ function drawAQILineGraphByYear(data, width, height, county) {
     .attr("x2", currentX)
     .attr("y1", padding)
     .attr("y2", height - padding)
-    .attr("stroke", "orange")
-    .attr("stroke-width", 4) // 寬度加大，便於拖曳
-    .attr("stroke-dasharray", "4,4")
+    .attr("stroke", "red")
+    .attr("stroke-width", 3.5) // 寬度加大，便於拖曳
     .style("cursor", "ew-resize");
 
   const yearLabel = svg
     .append("text")
     .attr("x", currentX - 28)
     .attr("y", padding - 8)
-    .attr("fill", "orange")
+    .attr("fill", "red")
     .style("font-size", "12px")
     .style("font-weight", "bold")
     .text(`Year: ${lastSelectedYear}`);

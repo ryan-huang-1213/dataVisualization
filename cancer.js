@@ -267,7 +267,7 @@ function drawCancerLineGraph(groupedData, width, height, county) {
     .y((d) => y(d.incidence))
     .curve(d3.curveMonotoneX);
 
-  const colors = { total: "black", male: "blue", female: "red" };
+  const colors = { total: "#58D68D", male: "#87CEEB", female: "#FFC0CB" };
 
   // 繪製折線和數據點
   ["total", "male", "female"].forEach((key) => {
@@ -302,16 +302,15 @@ function drawCancerLineGraph(groupedData, width, height, county) {
     .attr("x2", currentX)
     .attr("y1", padding)
     .attr("y2", height - padding)
-    .attr("stroke", "orange")
-    .attr("stroke-width", 4) // 寬度加大，便於拖曳
-    .attr("stroke-dasharray", "4,4")
+    .attr("stroke", "red")
+    .attr("stroke-width", 3.5) // 寬度加大，便於拖曳
     .style("cursor", "ew-resize");
 
   const yearLabel = svg
     .append("text")
     .attr("x", currentX - 28)
     .attr("y", padding - 8)
-    .attr("fill", "orange")
+    .attr("fill", "red")
     .style("font-size", "12px")
     .style("font-weight", "bold")
     .text(`Year: ${lastSelectedYear}`);

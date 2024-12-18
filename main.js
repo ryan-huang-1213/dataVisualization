@@ -20,6 +20,7 @@ export function updateCharts() {
   const cancerLineChartSize = getChartDimensions("#cancer-line-chart");
   const aqiBarChartSize = getChartDimensions("#aqi-bar-chart");
   const aqiLineChartSize = getChartDimensions("#aqi-line-chart");
+  const smokeChartSize = getChartDimensions("#smoking-chart");
   const mapSize = getChartDimensions("#taiwan");
 
   updateCancerBarGraph(
@@ -43,8 +44,9 @@ export function updateCharts() {
     aqiLineChartSize.height
   );
   updateSmokeChart(
-    ".smoking-graph",
-    "./dataset/18歲以上人口目前吸菸率_utf8.csv"
+    lastSelectedYear,
+    smokeChartSize.width,
+    smokeChartSize.height
   );
   drawTaiwan(
     lastSelectedCounty,

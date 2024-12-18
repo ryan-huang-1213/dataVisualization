@@ -8,6 +8,7 @@ import {
   lastSelectedCounty,
   setLastSelectedYear,
   setLastSelectedCounty,
+  displayCurrentSelection,
 } from "./sharedState.js";
 
 export function getChartDimensions(selector) {
@@ -57,8 +58,8 @@ export function updateCharts() {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
-  updateCharts();
-
+  // updateCharts();
+  displayCurrentSelection();
   // d3.select("#cancer-bar-chart").on("click", handleCancerChartClick);
   // d3.select("#cancer-line-chart").on("click", handleCancerChartClick);
 });

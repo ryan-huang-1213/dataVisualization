@@ -55,7 +55,25 @@
                 </div>
                 <div class="for-adjust d-flex d-row">
                     <div class="smoking-graph" id="smoking-chart"></div>
-                    <div class="slider">篩選滑桿</div>
+                    <div class="slider">
+                        <div class="for-adjust d-flex flex-column">
+                            <div id="now-select">
+                                <!--這裡放當前選擇-->
+                            </div>
+                            <div class="slider-section d-flex flex-row align-items-center my-2">
+                                <label for="smoke-slider" class="me-2">吸菸:</label>
+                                <input type="range" id="smoke-slider" min="-10" max="10" step="1" value="0" class="form-range">
+                            </div>
+                            <div class="slider-section d-flex flex-row align-items-center my-2">
+                                <label for="aqi-slider" class="me-2">AQI:</label>
+                                <input type="range" id="aqi-slider" min="-10" max="10" step="1" value="0" class="form-range">
+                            </div>
+                            <div class="slider-section d-flex flex-row align-items-center my-2">
+                                <label for="cancer-slider" class="me-2">癌症發生率:</label>
+                                <input type="range" id="cancer-slider" min="-10" max="10" step="1" value="0" class="form-range">
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
             <div class="cancer-graph d-flex flex-row">
